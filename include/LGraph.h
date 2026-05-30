@@ -1,3 +1,6 @@
+#ifndef LGRAPH_H
+#define LGRAPH_H
+
 #include "GraphTypes.h"
 #include <string>
 #include <vector>
@@ -40,3 +43,5 @@ private:
     std::string makeEdgeKey(const std::string& from, const std::string& to) const; // min(id) + "|" + max(id)
     Road normalizeEdge(const Road& road) const; // 标准化道路（from_id <= to_id）
 };
+
+#endif // LGRAPH_H

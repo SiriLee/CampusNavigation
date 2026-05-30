@@ -1,3 +1,6 @@
+#ifndef GRAPH_TYPES_H
+#define GRAPH_TYPES_H
+
 #include <string>
 
 struct Place {
@@ -16,3 +19,5 @@ struct Road {
     int walk_time; // 步行耗时（分钟）
     std::string status; // `open` 或 `closed`
 };
+
+#endif // GRAPH_TYPES_H
