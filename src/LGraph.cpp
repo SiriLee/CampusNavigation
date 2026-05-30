@@ -1,5 +1,8 @@
 #include "LGraph.h"
 #include <string>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
 #include <algorithm>
 
 std::string LGraph::makeEdgeKey(const std::string& from, const std::string& to) const {
@@ -77,6 +80,9 @@ bool LGraph::addRoad(const Road& road) {
     std::string edge_key = makeEdgeKey(norm_road.from_id, norm_road.to_id);
     if (edge_keys_.count(edge_key) > 0) {
         return false; // 道路已存在
+    }
+    if (!placeExists(norm_road.from_id) || !placeExists(norm_road.to_id)) {
+        return false; // 起点或终点不存在
     }
     adj_[norm_road.from_id].push_back(norm_road);
     adj_[norm_road.to_id].push_back(norm_road);
