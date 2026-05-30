@@ -13,5 +13,3 @@ build/
 # 临时文件
 *.log
 *.tmp
-
-.DS_Store
