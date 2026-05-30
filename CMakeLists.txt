@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 添加可执行文件
 add_executable(CampusNavigation
     src/main.cpp
-    # 后续添加其他源文件时，在此处追加
+    src/LGraph.cpp
+    src/CsvIO.cpp
 )
 
 # 指定头文件目录
