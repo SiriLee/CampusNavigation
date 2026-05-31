@@ -24,12 +24,16 @@ void CommandProcessor::initHandlers() {
     handlers_["UPDATE_ROAD"] = [this](const std::vector<std::string>& args) { cmdUpdateRoad(args); };
     handlers_["CLOSE_ROAD"] = [this](const std::vector<std::string>& args) { cmdCloseRoad(args); };
     handlers_["OPEN_ROAD"] = [this](const std::vector<std::string>& args) { cmdOpenRoad(args); };
+    handlers_["QUERY_PLACE"] = [this](const std::vector<std::string>& args) { cmdQueryPlace(args); };
+    handlers_["QUERY_CATEGORY"] = [this](const std::vector<std::string>& args) { cmdQueryCategory(args); };
+    handlers_["ADJ"] = [this](const std::vector<std::string>& args) { cmdADJ(args); };
 }
 
 void CommandProcessor::run() {
     std::string line;
     while (std::getline(std::cin, line)) {
         if (line.empty()) continue; // 跳过空行
+        if (line[0] == '#') continue; // 跳过注释行
         auto tokens = splitLine(line);
         if (tokens.empty()) continue; // 跳过没有命令的行
         // 获取 cmd 和 args

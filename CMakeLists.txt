@@ -10,6 +10,7 @@ add_executable(CampusNavigation
     src/main.cpp
     src/LGraph.cpp
     src/CsvIO.cpp
+    src/CommandProcessor.cpp
 )
 
 # 指定头文件目录
