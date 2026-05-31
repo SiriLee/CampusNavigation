@@ -1,3 +1,0 @@
-from_id,to_id,distance,walk_time,status
-P002,P003,180,3,open
-P001,P002,120,2,open
