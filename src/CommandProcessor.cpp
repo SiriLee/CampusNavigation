@@ -1,0 +1,228 @@
+#include "CommandProcessor.h"
+#include "CsvIO.h"
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+
+CommandProcessor::CommandProcessor(LGraph& graph) : graph_(graph) {
+    initHandlers();
+}
+
+void CommandProcessor::initHandlers() {
+    handlers_["LOAD"] = [this](const std::vector<std::string>& args) { cmdLoad(args); };
+    handlers_["SAVE"] = [this](const std::vector<std::string>& args) { cmdSave(args); };
+    handlers_["ADD_PLACE"] = [this](const std::vector<std::string>& args) { cmdAddPlace(args); };
+    handlers_["DELETE_PLACE"] = [this](const std::vector<std::string>& args) { cmdDeletePlace(args); };
+    handlers_["UPDATE_PLACE"] = [this](const std::vector<std::string>& args) { cmdUpdatePlace(args); };
+    handlers_["ADD_ROAD"] = [this](const std::vector<std::string>& args) { cmdAddRoad(args); };
+    handlers_["DELETE_ROAD"] = [this](const std::vector<std::string>& args) { cmdDeleteRoad(args); };
+    handlers_["UPDATE_ROAD"] = [this](const std::vector<std::string>& args) { cmdUpdateRoad(args); };
+    handlers_["CLOSE_ROAD"] = [this](const std::vector<std::string>& args) { cmdCloseRoad(args); };
+    handlers_["OPEN_ROAD"] = [this](const std::vector<std::string>& args) { cmdOpenRoad(args); };
+}
+
+void CommandProcessor::run() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line.empty()) continue; // 跳过空行
+        auto tokens = splitLine(line);
+        if (tokens.empty()) continue; // 跳过没有命令的行
+        // 获取 cmd 和 args
+        const std::string& cmd = tokens[0];
+        std::vector<std::string> args(tokens.begin() + 1, tokens.end());
+        // 查找并执行对应的命令处理函数
+        if (cmd == "QUIT") { 
+            break; // 退出循环
+        }
+        auto it = handlers_.find(cmd);
+        if (it != handlers_.end()) {
+            it->second(args);
+        } else {
+            std::cout << "ERROR unknown_command" << std::endl;
+        }
+    }
+}
+
+void CommandProcessor::cmdLoad(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 2)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& placesFile = args[0];
+    const std::string& roadsFile = args[1];
+    graph_.clear(); // 先清空现有数据
+    std::string errorMsg;
+    if (!loadPlaces(graph_, placesFile, errorMsg)) {
+        std::cout << "ERROR " << errorMsg << std::endl;
+        return;
+    }
+    if (!loadRoads(graph_, roadsFile, errorMsg)) {
+        std::cout << "ERROR " << errorMsg << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdSave(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 2)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& placesFile = args[0];
+    const std::string& roadsFile = args[1];
+    std::string errorMsg;
+    if (!savePlaces(graph_, placesFile, errorMsg)) {
+        std::cout << "ERROR " << errorMsg << std::endl;
+        return;
+    }
+    if (!saveRoads(graph_, roadsFile, errorMsg)) {
+        std::cout << "ERROR " << errorMsg << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdAddPlace(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 6)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    Place place{
+        args[0], // place_id
+        args[1], // display_name
+        args[2], // category
+        std::stoi(args[3]), // stay_time
+        args[4], // open_time
+        args[5]  // close_time
+    };
+    if (!graph_.addPlace(place)) {
+        std::cout << "ERROR duplicate_place_id" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdDeletePlace(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 1)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& place_id = args[0];
+    if (!graph_.deletePlace(place_id)) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdUpdatePlace(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 3)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& place_id = args[0];
+    const std::string& field = args[1];
+    const std::string& value = args[2];
+    const Place* place = graph_.getPlace(place_id);
+    if (!place) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return;
+    }
+    if (!graph_.updatePlace(*place, field, value)) {
+        std::cout << "ERROR invalid_field_or_value" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdAddRoad(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 5)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    Road road{
+        args[0], // from_id
+        args[1], // to_id
+        std::stoi(args[2]), // distance
+        std::stoi(args[3]), // walk_time
+        args[4]  // status
+    };
+    if (!graph_.addRoad(road)) {
+        std::cout << "ERROR duplicate_road_or_place_not_found" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdDeleteRoad(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 2)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from_id = args[0];
+    const std::string& to_id = args[1];
+    if (!graph_.deleteRoad(from_id, to_id)) {
+        std::cout << "ERROR road_not_found" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdUpdateRoad(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 4)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from_id = args[0];
+    const std::string& to_id = args[1];
+    const std::string& field = args[2];
+    const std::string& value = args[3];
+    if (!graph_.updateRoad(from_id, to_id, field, value)) {
+        std::cout << "ERROR invalid_field_or_value" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdCloseRoad(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 2)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from_id = args[0];
+    const std::string& to_id = args[1];
+    if (!graph_.closeRoad(from_id, to_id)) {
+        std::cout << "ERROR road_not_found" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdOpenRoad(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 2)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from_id = args[0];
+    const std::string& to_id = args[1];
+    if (!graph_.openRoad(from_id, to_id)) {
+        std::cout << "ERROR road_not_found" << std::endl;
+        return;
+    }
+    std::cout << "OK" << std::endl;
+}
+
+std::vector<std::string> CommandProcessor::splitLine(const std::string& line) {
+    std::vector<std::string> tokens;
+    std::istringstream iss(line);
+    std::string token;
+    while (iss >> token) {
+        tokens.push_back(token);
+    }
+    return tokens;
+}
+
+bool CommandProcessor::checkArgCount(const std::vector<std::string>& args, size_t expected) {
+    return args.size() == expected;
+}
