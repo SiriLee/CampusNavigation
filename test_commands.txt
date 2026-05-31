@@ -1,0 +1,23 @@
+# Load test data
+LOAD test_data/places.csv test_data/roads.csv
+
+# Query single place
+QUERY_PLACE P0001
+QUERY_PLACE P0002
+QUERY_PLACE P0005
+
+# Query places by category
+QUERY_CATEGORY Teaching
+QUERY_CATEGORY Dining
+QUERY_CATEGORY Medical
+
+# Query adjacent roads
+ADJ P0001
+ADJ P0002
+ADJ P0003
+
+# Save results
+SAVE test_data/out_places.csv test_data/out_roads.csv
+
+# End
+QUIT
