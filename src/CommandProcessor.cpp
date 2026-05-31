@@ -1,9 +1,13 @@
 #include "CommandProcessor.h"
 #include "CsvIO.h"
+
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <tuple>
+#include <functional>
 
 CommandProcessor::CommandProcessor(LGraph& graph) : graph_(graph) {
     initHandlers();
@@ -211,6 +215,71 @@ void CommandProcessor::cmdOpenRoad(const std::vector<std::string>& args) {
         return;
     }
     std::cout << "OK" << std::endl;
+}
+
+void CommandProcessor::cmdQueryPlace(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 1)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& place_id = args[0];
+    const Place* place = graph_.getPlace(place_id);
+    if (!place) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return;
+    }
+    std::cout << "PLACE " << place->place_id << " " << place->display_name << " " 
+              << place->category << " " << place->stay_time << " "
+              << place->open_time << " " << place->close_time << std::endl;
+}
+
+void CommandProcessor::cmdQueryCategory(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 1)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& category = args[0];
+    auto places = graph_.getAllPlaces();
+    std::vector<Place> filtered;
+    for (const auto& place : places) {
+        if (place.category == category) {
+            filtered.push_back(place);
+        }
+    }
+    // place_id 升序排序
+    std::sort(filtered.begin(), filtered.end(), [](const Place& a, const Place& b) {
+        return a.place_id < b.place_id;
+    });
+    for (const auto& place : filtered) {
+        std::cout << "PLACE " << place.place_id << " " << place.display_name << " " 
+                  << place.category << " " << place.stay_time << " "
+                  << place.open_time << " " << place.close_time << std::endl;
+    }
+}
+
+void CommandProcessor::cmdADJ(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 1)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& place_id = args[0];
+    auto roads = graph_.getAdjacent(place_id);
+    // <neighbor_id>:<distance>:<walk_time>:<status>
+    std::vector<std::tuple<std::string, int, int, std::string>> neighbors;
+    for (const auto& road : roads) {
+        std::string neighbor_id = (road.from_id == place_id) ? road.to_id : road.from_id;
+        neighbors.emplace_back(neighbor_id, road.distance, road.walk_time, road.status);
+    }
+    // neighbor_id 升序排序
+    std::sort(neighbors.begin(), neighbors.end(), [](const auto& a, const auto& b) {
+        return std::get<0>(a) < std::get<0>(b);
+    });
+    std::cout << "ADJ " << place_id << " " << neighbors.size();
+    for (const auto& neighbor : neighbors) {
+        std::cout << " " << std::get<0>(neighbor) << ":" << std::get<1>(neighbor) 
+                  << ":" << std::get<2>(neighbor) << ":" << std::get<3>(neighbor);
+    }
+    std::cout << std::endl;
 }
 
 std::vector<std::string> CommandProcessor::splitLine(const std::string& line) {

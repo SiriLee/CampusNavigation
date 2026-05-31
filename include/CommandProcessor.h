@@ -1,4 +1,5 @@
 #include "LGraph.h"
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -27,6 +28,9 @@ private:
     void cmdUpdateRoad(const std::vector<std::string>& args);
     void cmdCloseRoad(const std::vector<std::string>& args);
     void cmdOpenRoad(const std::vector<std::string>& args);
+    void cmdQueryPlace(const std::vector<std::string>& args);
+    void cmdQueryCategory(const std::vector<std::string>& args);
+    void cmdADJ(const std::vector<std::string>& args);
 
     // 辅助函数：分割输入行
     std::vector<std::string> splitLine(const std::string& line);
