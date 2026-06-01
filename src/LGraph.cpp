@@ -167,6 +167,39 @@ std::vector<Place> LGraph::getAllPlaces() const {
     return result;
 }
 
+std::vector<Road> LGraph::getAllOpenEdges() const {
+    std::vector<Road> result;
+    for (const auto& [from_id, roads] : adj_) {
+        for (const Road& road : roads) {
+            if (road.status == "open") {
+                result.push_back(road);
+            }
+        }
+    }
+    return result;
+}
+
+std::vector<std::string> LGraph::getAllVertexIds() const {
+    std::vector<std::string> result;
+    for (const auto& [id, place] : places_) {
+        result.push_back(id);
+    }
+    return result;
+}
+
+std::vector<Road> LGraph::getOpenAdjacent(const std::string& id) const {
+    std::vector<Road> result;
+    if (!placeExists(id)) {
+        return result; // 地点不存在
+    }
+    for (const Road& road : adj_.at(id)) {
+        if (road.status == "open") {
+            result.push_back(road);
+        }
+    }
+    return result;
+}
+
 void LGraph::clear() {
     places_.clear();
     adj_.clear();

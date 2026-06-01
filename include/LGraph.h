@@ -29,6 +29,9 @@ public:
     // 查询操作
     std::vector<Road> getAdjacent(const std::string& id) const; // 获取相邻道路
     std::vector<Place> getAllPlaces() const; // 用于按类别查询
+    std::vector<Road> getAllOpenEdges() const; // 获取所有 open 边
+    std::vector<std::string> getAllVertexIds() const; // 获取所有顶点 ID
+    std::vector<Road> getOpenAdjacent(const std::string& id) const; // 获取某个顶点的所有 open 邻居
 
     // 清理
     void clear(); // 清空所有数据，用于 LOAD 命令
