@@ -169,10 +169,15 @@ std::vector<Place> LGraph::getAllPlaces() const {
 
 std::vector<Road> LGraph::getAllOpenEdges() const {
     std::vector<Road> result;
+    std::unordered_set<std::string> seen_edges; // 避免重复添加同一条道路
     for (const auto& [from_id, roads] : adj_) {
         for (const Road& road : roads) {
             if (road.status == "open") {
-                result.push_back(road);
+                std::string edge_key = makeEdgeKey(road.from_id, road.to_id);
+                if (seen_edges.count(edge_key) == 0) { // 去重
+                    seen_edges.insert(edge_key);
+                    result.push_back(road);
+                }
             }
         }
     }
