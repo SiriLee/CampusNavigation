@@ -32,6 +32,7 @@ private:
     void cmdQueryCategory(const std::vector<std::string>& args);
     void cmdADJ(const std::vector<std::string>& args);
     void cmdComponents(const std::vector<std::string>& args);
+    void cmdShortest(const std::vector<std::string>& args);
 
     // 辅助函数：分割输入行
     std::vector<std::string> splitLine(const std::string& line);

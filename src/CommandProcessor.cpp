@@ -29,6 +29,7 @@ void CommandProcessor::initHandlers() {
     handlers_["QUERY_CATEGORY"] = [this](const std::vector<std::string>& args) { cmdQueryCategory(args); };
     handlers_["ADJ"] = [this](const std::vector<std::string>& args) { cmdADJ(args); };
     handlers_["COMPONENTS"] = [this](const std::vector<std::string>& args) { cmdComponents(args); };
+    handlers_["SHORTEST"] = [this](const std::vector<std::string>& args) { cmdShortest(args); };
 }
 
 void CommandProcessor::run() {
@@ -299,6 +300,34 @@ void CommandProcessor::cmdComponents(const std::vector<std::string>& args) {
         std::cout << " " << size;
     }
     std::cout << std::endl;
+}
+
+void CommandProcessor::cmdShortest(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 3)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from = args[0];
+    const std::string& to = args[1];
+    const std::string& mode = args[2];
+    if (!graph_.placeExists(from) || !graph_.placeExists(to)) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return;
+    }
+    if (mode != "DIST" && mode != "TIME") {
+        std::cout << "ERROR invalid_mode" << std::endl;
+        return;
+    }
+    auto result = shortestPath(graph_, from, to, mode);
+    if (!result.reachable) {
+        std::cout << "NO_PATH" << std::endl;
+    } else {
+        std::cout << "PATH " << mode << " " << result.totalCost << " NODES";
+        for (const auto& node : result.nodes) {
+            std::cout << " " << node;
+        }
+        std::cout << std::endl;
+    }
 }
 
 std::vector<std::string> CommandProcessor::splitLine(const std::string& line) {

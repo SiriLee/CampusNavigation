@@ -42,7 +42,7 @@ PathResult shortestPath(const LGraph& graph, const std::string& from, const std:
     PathResult result;
     if (!graph.placeExists(from) || !graph.placeExists(to)) {
         result.reachable = false;
-        return result; // 起点或终点不存在
+        return result; // 起点或终点不存在（实际在命令操作中判断）
     }
 
     using PQElement = std::pair<int, std::string>; // <累计成本, 顶点 ID>
