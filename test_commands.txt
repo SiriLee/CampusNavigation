@@ -16,6 +16,9 @@ ADJ P0001
 ADJ P0002
 ADJ P0003
 
+# Compute components
+COMPONENTS
+
 # Save results
 SAVE test_data/out_places.csv test_data/out_roads.csv
 

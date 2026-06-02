@@ -1,5 +1,6 @@
 #include "CommandProcessor.h"
 #include "CsvIO.h"
+#include "Algorithm.h"
 
 #include <iostream>
 #include <sstream>
@@ -27,6 +28,7 @@ void CommandProcessor::initHandlers() {
     handlers_["QUERY_PLACE"] = [this](const std::vector<std::string>& args) { cmdQueryPlace(args); };
     handlers_["QUERY_CATEGORY"] = [this](const std::vector<std::string>& args) { cmdQueryCategory(args); };
     handlers_["ADJ"] = [this](const std::vector<std::string>& args) { cmdADJ(args); };
+    handlers_["COMPONENTS"] = [this](const std::vector<std::string>& args) { cmdComponents(args); };
 }
 
 void CommandProcessor::run() {
@@ -282,6 +284,19 @@ void CommandProcessor::cmdADJ(const std::vector<std::string>& args) {
     for (const auto& neighbor : neighbors) {
         std::cout << " " << std::get<0>(neighbor) << ":" << std::get<1>(neighbor) 
                   << ":" << std::get<2>(neighbor) << ":" << std::get<3>(neighbor);
+    }
+    std::cout << std::endl;
+}
+
+void CommandProcessor::cmdComponents(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 0)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    auto [count, sizes] = computeComponents(graph_);
+    std::cout << "COMPONENTS " << count << " SIZES";
+    for (int size : sizes) {
+        std::cout << " " << size;
     }
     std::cout << std::endl;
 }
