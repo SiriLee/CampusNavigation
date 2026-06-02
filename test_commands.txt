@@ -19,6 +19,11 @@ ADJ P0003
 # Compute components
 COMPONENTS
 
+# Shortest path
+SHORTEST P0001 P0005 DIST
+SHORTEST P0001 P9999 DIST
+SHORTEST P0001 P0006 DIST
+
 # Save results
 SAVE test_data/out_places.csv test_data/out_roads.csv
 
