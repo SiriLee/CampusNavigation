@@ -10,6 +10,7 @@
 using WeightFunc = std::function<int(const Road&)>; // 权重获取器类型
 using VertexFilter = std::function<bool(const std::string&)>; // 顶点过滤器类型
 
+// 并查集，用于最小生成树Kruskal算法
 class DSU {
 public:
     void makeSet(const std::string& x);

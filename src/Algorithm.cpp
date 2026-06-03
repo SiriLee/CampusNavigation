@@ -1,5 +1,6 @@
 #include "Algorithm.h"
 
+#include <string>
 #include <utility>
 #include <vector>
 #include <unordered_set>
@@ -7,6 +8,23 @@
 #include <algorithm>
 #include <unordered_map>
 #include <limits>
+
+void DSU::makeSet(const std::string& x) {
+    if (parent_.count(x) == 0) {
+        parent_[x] = x;
+    }
+}
+
+std::string DSU::find(const std::string& x) {
+    if (parent_[x] != x) {
+        parent_[x] = find(parent_[x]); // 路径压缩
+    }
+    return parent_[x];
+}
+
+void DSU::unite(const std::string& x, const std::string& y) {
+    parent_[find(x)] = find(y);
+}
 
 std::pair<int, std::vector<int>> computeComponents(const LGraph& graph) {
     auto vertices = graph.getAllVertexIds();
@@ -133,4 +151,31 @@ PathResult mustPassPath(const LGraph& graph, const std::string& from, const std:
         }
     }
     return finalResult;
+}
+
+MSTResult computeMST(const LGraph& graph) {
+    MSTResult result;
+    DSU dsu;
+    std::vector<Road> edges = graph.getAllOpenEdges(); // 只考虑 open 边
+    for (const auto& vertex : graph.getAllVertexIds()) {
+        dsu.makeSet(vertex);
+    }
+    // 按 distance 升序排序边
+    std::sort(edges.begin(), edges.end(), [](const Road& a, const Road& b) {
+        return a.distance < b.distance;
+    });
+    
+    result.totalDistance = 0;
+    for (const auto& edge : edges) {
+        if (dsu.find(edge.from_id) != dsu.find(edge.to_id)) {
+            dsu.unite(edge.from_id, edge.to_id);
+            result.edges.push_back(edge);
+            result.totalDistance += edge.distance;
+        }
+    }
+    
+    // 检查连通性：MST边数 = 顶点数 - 1
+    result.connected = (result.edges.size() == graph.getAllVertexIds().size() - 1);
+    
+    return result;
 }
