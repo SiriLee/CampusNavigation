@@ -33,6 +33,7 @@ void CommandProcessor::initHandlers() {
     handlers_["SHORTEST"] = [this](const std::vector<std::string>& args) { cmdShortest(args); };
     handlers_["TIMED_SHORTEST"] = [this](const std::vector<std::string>& args) { cmdTimedShortest(args); };
     handlers_["MUST_PASS"] = [this](const std::vector<std::string>& args) { cmdMustPass(args); };
+    handlers_["MST"] = [this](const std::vector<std::string>& args) { cmdMST(args); };
 }
 
 void CommandProcessor::run() {
@@ -424,6 +425,36 @@ void CommandProcessor::cmdMustPass(const std::vector<std::string>& args) {
         }
         std::cout << std::endl;
     }
+}
+
+void CommandProcessor::cmdMST(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 0)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    auto result = computeMST(graph_);
+    if (!result.connected) {
+        std::cout << "DISCONNECTED" << std::endl;
+        return;
+    }
+    auto& edges = result.edges; // 避免不必要的复制
+    // (min_id, max_id)
+    for (auto& edge : edges) {
+        if (edge.from_id > edge.to_id) {
+            std::swap(edge.from_id, edge.to_id);
+        }
+    }
+    // 按 (from_id, to_id) 升序排序
+    std::sort(edges.begin(), edges.end(), [](const Road& a, const Road& b) {
+        if (a.from_id != b.from_id) return a.from_id < b.from_id;
+        return a.to_id < b.to_id;
+    });
+    // MST <totalDistance> EDGES <u1>-<v1>:<w1> <u2>-<v2>:<w2> ...
+    std::cout << "MST " << result.totalDistance << " EDGES";
+    for (const auto& edge : edges) {
+        std::cout << " " << edge.from_id << "-" << edge.to_id << ":" << edge.distance;
+    }
+    std::cout << std::endl;
 }
 
 std::vector<std::string> CommandProcessor::splitLine(const std::string& line) {
