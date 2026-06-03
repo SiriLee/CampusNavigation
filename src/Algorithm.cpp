@@ -179,3 +179,85 @@ MSTResult computeMST(const LGraph& graph) {
     
     return result;
 }
+
+CriticalResult computeCritical(const LGraph& graph) {
+    CriticalResult result;
+    
+    // 1. 获取顶点并映射为整数索引
+    auto vertices = graph.getAllVertexIds();
+    if (vertices.empty()) return result;
+    int n = vertices.size();
+
+    std::unordered_map<std::string, int> idToIndex;// ID -> 索引
+    std::vector<std::string> indexToId(n); // 索引 -> ID
+    for (int i = 0; i < n; ++i) {
+        idToIndex[vertices[i]] = i;
+        indexToId[i] = vertices[i];
+    }
+
+    // 2. 构建整数邻接表（只考虑 open 边）
+    std::vector<std::vector<int>> adj(n); // 邻接表
+    for (const auto& edge : graph.getAllOpenEdges()) {
+        int u = idToIndex[edge.from_id];
+        int v = idToIndex[edge.to_id];
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    // 3. Tarjan 初始化
+    std::vector<int> disc(n, -1), low(n, -1), parent(n, -1);
+    std::vector<bool> isArticulation(n, false);
+    std::vector<std::pair<int, int>> bridges; // 存储桥的索引对
+    int time = 0;
+
+    // 4. dfs 递归函数定义
+    std::function<void(int)> dfs = [&](int u) {
+        // 1. 获取顶点并映射为整数索引
+        disc[u] = low[u] = ++time;
+        int children = 0;
+        for (int v : adj[u]) {
+            if (disc[v] == -1) { // v 未访问过
+                parent[v] = u;
+                ++children;
+                dfs(v);
+                low[u] = std::min(low[u], low[v]);
+                // 判断割点
+                if (parent[u] == -1 && children > 1) {
+                    isArticulation[u] = true; // 根节点且有多个子树
+                }
+                if (parent[u] != -1 && low[v] >= disc[u]) {
+                    isArticulation[u] = true; // 非根节点且没有后代通过 back edge 回到 u 或更早的祖先
+                }
+                // 判断桥
+                if (low[v] > disc[u]) {
+                    bridges.emplace_back(u, v);
+                }
+            } else if (v != parent[u]) { // back edge
+                low[u] = std::min(low[u], disc[v]);
+            }
+        }
+    };
+
+    // 5.对每个连通分量运行 DFS
+    for (int i = 0; i < n; ++i) {
+        if (disc[i] == -1) {
+            dfs(i);
+        }
+    }
+
+    // 6. 收集关键节点（转为字符串 ID）
+    for (int i = 0; i < n; ++i) {
+        if (isArticulation[i]) {
+            result.nodes.push_back(indexToId[i]);
+        }
+    }
+    std::sort(result.nodes.begin(), result.nodes.end()); // 升序排序
+
+    // 7. 收集关键边（标准化 from_id <= to_id）
+    for (const auto& [u, v] : bridges) {
+        result.edges.emplace_back(indexToId[std::min(u, v)], indexToId[std::max(u, v)]);
+    }
+    std::sort(result.edges.begin(), result.edges.end()); // 升序排序
+
+    return result;
+}

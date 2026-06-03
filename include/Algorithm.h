@@ -34,6 +34,12 @@ struct MSTResult {
     std::vector<Road> edges; // 最小生成树的边列表
 };
 
+// 关键节点和关键边
+struct CriticalResult {
+    std::vector<std::string> nodes; // 割点
+    std::vector<std::pair<std::string, std::string>> edges; // 桥（存储为地点 ID 对）
+};
+
 // 连通分量分析，返回<分量个数, 各分量大小列表（已降序）>
 std::pair<int, std::vector<int>> computeComponents(const LGraph& graph);
 
@@ -50,5 +56,8 @@ PathResult mustPassPath(const LGraph& graph, const std::string& from, const std:
 
 // 最小生成树算法
 MSTResult computeMST(const LGraph& graph);
+
+// 关键节点和关键边分析
+CriticalResult computeCritical(const LGraph& graph);
 
 #endif // ALGORITHM_H
