@@ -94,6 +94,7 @@ PathResult dijkstra(const LGraph& graph, const std::string& from, const std::str
     return result;
 }
 
+[[deprecated("Use dijkstra instead")]]
 PathResult shortestPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode) {
     PathResult result;
@@ -144,4 +145,38 @@ PathResult shortestPath(const LGraph& graph, const std::string& from, const std:
         std::reverse(result.nodes.begin(), result.nodes.end()); // 正序输出
     }
     return result;
+}
+
+PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
+    const std::string& mode, const std::vector<std::string>& mustPass) {
+    // 构建完整的路径点列表：from -> mustPass... -> to
+    std::vector<std::string> points = {from}; 
+    points.reserve(2 + mustPass.size());
+    points.insert(points.end(), mustPass.begin(), mustPass.end());
+    points.push_back(to);
+
+    PathResult finalResult;
+    finalResult.reachable = true; // 初始假设可达
+    finalResult.totalCost = 0;
+
+    auto weightFunc = [&](const Road& road) -> int {
+        return (mode == "DIST") ? road.distance : road.walk_time;
+    };
+
+    // 依次计算每段路径
+    for (size_t i = 0; i < points.size() - 1; ++i) {
+        auto segmentResult = dijkstra(graph, points[i], points[i + 1], weightFunc);
+        if (!segmentResult.reachable) {
+            finalResult.reachable = false; // 任一段不可达，则整体不可达
+            return finalResult;
+        }
+        finalResult.totalCost += segmentResult.totalCost; // 累加总成本
+        if (i == 0) {
+            finalResult.nodes.insert(finalResult.nodes.end(), segmentResult.nodes.begin(), segmentResult.nodes.end());
+        } else {
+            // 后续段去掉起点（已在前一段末尾），避免重复
+            finalResult.nodes.insert(finalResult.nodes.end(), segmentResult.nodes.begin() + 1, segmentResult.nodes.end());
+        }
+    }
+    return finalResult;
 }

@@ -28,4 +28,8 @@ PathResult dijkstra(const LGraph& graph, const std::string& from, const std::str
 PathResult shortestPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode); // mode: "DIST" 或 "TIME"
 
+// 必经点路径规划 <from_id> <to_id> <DIST|TIME> <k> <p1> <p2> ... <pk>
+PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
+    const std::string& mode, const std::vector<std::string>& mustPass); // mustPass: p1, p2, ..., pk
+
 #endif // ALGORITHM_H
