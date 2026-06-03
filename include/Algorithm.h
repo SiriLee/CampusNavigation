@@ -23,6 +23,9 @@ using VertexFilter = std::function<bool(const std::string&)>;
 PathResult dijkstra(const LGraph& graph, const std::string& from, const std::string& to, 
     WeightFunc weightFunc, VertexFilter vertexFilter = nullptr);
 
+// 辅助时间过滤器函数
+VertexFilter makeTimeFilter(const LGraph& graph, const std::string& time_str);
+
 // 必经点路径规划
 PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode, const std::vector<std::string>& mustPass); // mustPass: p1, p2, ..., pk

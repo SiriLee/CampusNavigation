@@ -369,10 +369,7 @@ void CommandProcessor::cmdTimedShortest(const std::vector<std::string>& args) {
         [&mode](const Road& road) {
             return (mode == "DIST") ? road.distance : road.walk_time;
         }, // 模式对应的权重函数
-        [this, &time_str](const std::string& vertex_id) {
-            auto* place = graph_.getPlace(vertex_id);
-            return place && (place->open_time <= time_str && time_str <= place->close_time);
-        } // 顶点过滤器：检查时间是否在开放时间内
+        makeTimeFilter(graph_, time_str) // 顶点过滤器：检查时间是否在开放时间内
     );
 
     if (!result.reachable) {

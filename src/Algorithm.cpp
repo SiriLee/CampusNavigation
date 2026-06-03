@@ -94,6 +94,13 @@ PathResult dijkstra(const LGraph& graph, const std::string& from, const std::str
     return result;
 }
 
+VertexFilter makeTimeFilter(const LGraph& graph, const std::string& time_str) {
+    return [graph, time_str](const std::string& vertex_id) {
+        auto* place = graph.getPlace(vertex_id);
+        return place && (place->open_time <= time_str && time_str <= place->close_time);
+    };
+}
+
 PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode, const std::vector<std::string>& mustPass) {
     // 构建完整的路径点列表：from -> mustPass... -> to
