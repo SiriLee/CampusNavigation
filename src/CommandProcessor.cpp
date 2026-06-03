@@ -34,6 +34,7 @@ void CommandProcessor::initHandlers() {
     handlers_["TIMED_SHORTEST"] = [this](const std::vector<std::string>& args) { cmdTimedShortest(args); };
     handlers_["MUST_PASS"] = [this](const std::vector<std::string>& args) { cmdMustPass(args); };
     handlers_["MST"] = [this](const std::vector<std::string>& args) { cmdMST(args); };
+    handlers_["CRITICAL"] = [this](const std::vector<std::string>& args) { cmdCritical(args); };
 }
 
 void CommandProcessor::run() {
@@ -453,6 +454,26 @@ void CommandProcessor::cmdMST(const std::vector<std::string>& args) {
     std::cout << "MST " << result.totalDistance << " EDGES";
     for (const auto& edge : edges) {
         std::cout << " " << edge.from_id << "-" << edge.to_id << ":" << edge.distance;
+    }
+    std::cout << std::endl;
+}
+
+void CommandProcessor::cmdCritical(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 0)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    auto result = computeCritical(graph_);
+    auto& nodes = result.nodes; // 割点
+    auto& edges = result.edges; // 桥
+    // CRITICAL NODES <node_count> <id1> <id2> ... EDGES <edge_count> <u1>-<v1> <u2>-<v2> ...
+    std::cout << "CRITICAL NODES " << nodes.size();
+    for (const auto& node : nodes) {
+        std::cout << " " << node;
+    }
+    std::cout << " EDGES " << edges.size();
+    for (const auto& edge : edges) {
+        std::cout << " " << edge.first << "-" << edge.second;
     }
     std::cout << std::endl;
 }

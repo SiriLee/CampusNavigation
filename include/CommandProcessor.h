@@ -36,6 +36,7 @@ private:
     void cmdTimedShortest(const std::vector<std::string>& args);
     void cmdMustPass(const std::vector<std::string>& args);
     void cmdMST(const std::vector<std::string>& args);
+    void cmdCritical(const std::vector<std::string>& args);
 
     // 辅助函数：分割输入行
     std::vector<std::string> splitLine(const std::string& line);
