@@ -306,6 +306,7 @@ void CommandProcessor::cmdComponents(const std::vector<std::string>& args) {
 }
 
 void CommandProcessor::cmdShortest(const std::vector<std::string>& args) {
+    // SHORTEST <from_id> <to_id> <DIST|TIME>
     if (!checkArgCount(args, 3)) {
         std::cout << "ERROR invalid_arguments" << std::endl;
         return;
@@ -334,6 +335,7 @@ void CommandProcessor::cmdShortest(const std::vector<std::string>& args) {
 }
 
 void CommandProcessor::cmdTimedShortest(const std::vector<std::string>& args) {
+    // TIMED_SHORTEST <from_id> <to_id> <time> <DIST|TIME>
     if (!checkArgCount(args, 4)) {
         std::cout << "ERROR invalid_arguments" << std::endl;
         return;
@@ -380,6 +382,7 @@ void CommandProcessor::cmdTimedShortest(const std::vector<std::string>& args) {
 }
 
 void CommandProcessor::cmdMustPass(const std::vector<std::string>& args) {
+    // MUST_PASS <from> <to> <DIST|TIME> <k> <p1> <p2> ... <pk>
     if (args.size() < 5) {
         std::cout << "ERROR invalid_arguments" << std::endl;
         return;
