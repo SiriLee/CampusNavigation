@@ -1,1 +1,340 @@
+#include <windows.h>
+
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+struct TestCase {
+	fs::path directory;
+	fs::path relativeName;
+};
+
+struct RunResult {
+	bool launched = false;
+	DWORD exitCode = 0;
+	std::string error;
+};
+
+std::string readFile(const fs::path& path) {
+	std::ifstream file(path, std::ios::binary);
+	if (!file.is_open()) {
+		return {};
+	}
+	return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+}
+
+std::string normalizeText(std::string text) {
+	std::string normalized;
+	normalized.reserve(text.size());
+	for (size_t i = 0; i < text.size(); ++i) {
+		if (text[i] == '\r') {
+			if (i + 1 < text.size() && text[i + 1] == '\n') {
+				continue;
+			}
+			normalized.push_back('\n');
+		} else {
+			normalized.push_back(text[i]);
+		}
+	}
+	return normalized;
+}
+
+static void rtrim_inplace(std::string& s) {
+	while (!s.empty() && (s.back() == ' ' || s.back() == '\t')) {
+		s.pop_back();
+	}
+}
+
+std::string normalizeLinesTrim(const std::string& text) {
+	std::string out;
+	size_t start = 0;
+	while (start < text.size()) {
+		size_t pos = text.find('\n', start);
+		std::string line;
+		if (pos == std::string::npos) {
+			line = text.substr(start);
+			start = text.size();
+		} else {
+			line = text.substr(start, pos - start);
+			start = pos + 1;
+		}
+		rtrim_inplace(line);
+		out.append(line);
+		out.push_back('\n');
+	}
+	return out;
+}
+
+std::vector<std::string> splitWords(const std::string& line) {
+	std::istringstream iss(line);
+	std::vector<std::string> tokens;
+	std::string token;
+	while (iss >> token) {
+		tokens.push_back(token);
+	}
+	return tokens;
+}
+
+bool comparePathLines(const std::string& actual, const std::string& expected) {
+	if (actual == expected) {
+		return true;
+	}
+	const auto actualTokens = splitWords(actual);
+	const auto expectedTokens = splitWords(expected);
+	if (actualTokens.size() < 5 || expectedTokens.size() < 5) {
+		return false;
+	}
+	if (actualTokens[0] != "PATH" || expectedTokens[0] != "PATH") {
+		return false;
+	}
+	if (actualTokens[1] != expectedTokens[1] || actualTokens[2] != expectedTokens[2]) {
+		return false;
+	}
+	if (actualTokens[3] != "NODES" || expectedTokens[3] != "NODES") {
+		return false;
+	}
+	return actualTokens[4] == expectedTokens[4] && actualTokens.back() == expectedTokens.back();
+}
+
+bool compareMstLines(const std::string& actual, const std::string& expected) {
+	if (actual == expected) {
+		return true;
+	}
+	const auto actualTokens = splitWords(actual);
+	const auto expectedTokens = splitWords(expected);
+	if (actualTokens.size() < 3 || expectedTokens.size() < 3) {
+		return false;
+	}
+	if (actualTokens[0] != "MST" || expectedTokens[0] != "MST") {
+		return false;
+	}
+	if (actualTokens[1] != expectedTokens[1]) {
+		return false;
+	}
+	return actualTokens[2] == "EDGES" && expectedTokens[2] == "EDGES";
+}
+
+bool compareOutputLine(const std::string& actual, const std::string& expected) {
+	if (actual == expected) {
+		return true;
+	}
+	if (actual.rfind("PATH ", 0) == 0 && expected.rfind("PATH ", 0) == 0) {
+		return comparePathLines(actual, expected);
+	}
+	if (actual.rfind("MST ", 0) == 0 && expected.rfind("MST ", 0) == 0) {
+		return compareMstLines(actual, expected);
+	}
+	return false;
+}
+
+std::vector<TestCase> discoverCases(const fs::path& root) {
+	std::vector<TestCase> cases;
+	if (!fs::exists(root)) {
+		return cases;
+	}
+
+	for (const auto& entry : fs::recursive_directory_iterator(root)) {
+		if (!entry.is_directory()) {
+			continue;
+		}
+		const fs::path directory = entry.path();
+		if (fs::exists(directory / "command.txt") && fs::exists(directory / "answer.txt")) {
+			cases.push_back(TestCase{directory, fs::relative(directory, root)});
+		}
+	}
+
+	std::sort(cases.begin(), cases.end(), [](const TestCase& lhs, const TestCase& rhs) {
+		return lhs.relativeName.generic_string() < rhs.relativeName.generic_string();
+	});
+	return cases;
+}
+
+bool ensureParentDirectory(const fs::path& path) {
+	std::error_code ec;
+	fs::create_directories(path.parent_path(), ec);
+	return !ec;
+}
+
+std::string makeSafeName(const fs::path& relativeName) {
+	std::string name = relativeName.generic_string();
+	std::replace(name.begin(), name.end(), '/', '_');
+	return name;
+}
+
+RunResult runProgram(const fs::path& executable, const fs::path& workingDirectory, const fs::path& inputFile, const fs::path& outputFile) {
+	RunResult result;
+
+	SECURITY_ATTRIBUTES attributes{};
+	attributes.nLength = sizeof(attributes);
+	attributes.bInheritHandle = TRUE;
+
+	HANDLE inputHandle = CreateFileA(
+		inputFile.string().c_str(),
+		GENERIC_READ,
+		FILE_SHARE_READ,
+		&attributes,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		nullptr);
+	if (inputHandle == INVALID_HANDLE_VALUE) {
+		result.error = "cannot_open_command_file";
+		return result;
+	}
+
+	HANDLE outputHandle = CreateFileA(
+		outputFile.string().c_str(),
+		GENERIC_WRITE,
+		0,
+		&attributes,
+		CREATE_ALWAYS,
+		FILE_ATTRIBUTE_NORMAL,
+		nullptr);
+	if (outputHandle == INVALID_HANDLE_VALUE) {
+		CloseHandle(inputHandle);
+		result.error = "cannot_create_output_file";
+		return result;
+	}
+
+	STARTUPINFOA startupInfo{};
+	startupInfo.cb = sizeof(startupInfo);
+	startupInfo.dwFlags = STARTF_USESTDHANDLES;
+	startupInfo.hStdInput = inputHandle;
+	startupInfo.hStdOutput = outputHandle;
+	startupInfo.hStdError = outputHandle;
+
+	PROCESS_INFORMATION processInfo{};
+	std::string commandLine = '"' + executable.string() + '"';
+	std::vector<char> mutableCommandLine(commandLine.begin(), commandLine.end());
+	mutableCommandLine.push_back('\0');
+
+	BOOL created = CreateProcessA(
+		nullptr,
+		mutableCommandLine.data(),
+		nullptr,
+		nullptr,
+		TRUE,
+		0,
+		nullptr,
+		workingDirectory.string().c_str(),
+		&startupInfo,
+		&processInfo);
+
+	CloseHandle(inputHandle);
+	CloseHandle(outputHandle);
+
+	if (!created) {
+		result.error = "cannot_launch_program";
+		return result;
+	}
+
+	result.launched = true;
+	WaitForSingleObject(processInfo.hProcess, INFINITE);
+	DWORD exitCode = 0;
+	if (!GetExitCodeProcess(processInfo.hProcess, &exitCode)) {
+		exitCode = static_cast<DWORD>(-1);
+	}
+	result.exitCode = exitCode;
+
+	CloseHandle(processInfo.hThread);
+	CloseHandle(processInfo.hProcess);
+	return result;
+}
+
+int main(int argc, char* argv[]) {
+	if (argc < 4) {
+		std::cerr << "usage: CampusNavigationTests <app_exe> <must_do_root> <result_root>\n";
+		return 2;
+	}
+
+	const fs::path executable = fs::absolute(argv[1]);
+	const fs::path root = fs::absolute(argv[2]);
+	const fs::path resultRoot = fs::absolute(argv[3]);
+
+	const auto cases = discoverCases(root);
+	if (cases.empty()) {
+		std::cerr << "no test cases found under " << root.string() << '\n';
+		return 2;
+	}
+
+	std::vector<std::string> failedCases;
+	size_t passed = 0;
+
+	for (const auto& testCase : cases) {
+		const fs::path outputFile = resultRoot / (makeSafeName(testCase.relativeName) + "_output.txt");
+		if (!ensureParentDirectory(outputFile)) {
+			failedCases.push_back(testCase.relativeName.generic_string() + ": cannot_prepare_output_directory");
+			std::cout << "FAIL " << testCase.relativeName.generic_string() << " cannot_prepare_output_directory\n";
+			continue;
+		}
+
+		const RunResult runResult = runProgram(executable, testCase.directory, testCase.directory / "command.txt", outputFile);
+		if (!runResult.launched) {
+			failedCases.push_back(testCase.relativeName.generic_string() + ": " + runResult.error);
+			std::cout << "FAIL " << testCase.relativeName.generic_string() << ' ' << runResult.error << '\n';
+			continue;
+		}
+
+		if (runResult.exitCode != 0) {
+			failedCases.push_back(testCase.relativeName.generic_string() + ": process_exit_" + std::to_string(runResult.exitCode));
+			std::cout << "FAIL " << testCase.relativeName.generic_string() << " process_exit_" << runResult.exitCode << '\n';
+			continue;
+		}
+
+		const std::string actual = normalizeLinesTrim(normalizeText(readFile(outputFile)));
+		const std::string expected = normalizeLinesTrim(normalizeText(readFile(testCase.directory / "answer.txt")));
+
+		if (actual == expected) {
+			++passed;
+			std::cout << "PASS " << testCase.relativeName.generic_string() << '\n';
+			continue;
+		}
+
+		bool same = true;
+		size_t actualLineStart = 0;
+		size_t expectedLineStart = 0;
+		while (actualLineStart < actual.size() || expectedLineStart < expected.size()) {
+			size_t actualLineEnd = actual.find('\n', actualLineStart);
+			if (actualLineEnd == std::string::npos) actualLineEnd = actual.size();
+			size_t expectedLineEnd = expected.find('\n', expectedLineStart);
+			if (expectedLineEnd == std::string::npos) expectedLineEnd = expected.size();
+			std::string actualLine = actual.substr(actualLineStart, actualLineEnd - actualLineStart);
+			std::string expectedLine = expected.substr(expectedLineStart, expectedLineEnd - expectedLineStart);
+			if (!compareOutputLine(actualLine, expectedLine)) {
+				same = false;
+				break;
+			}
+			actualLineStart = (actualLineEnd == actual.size()) ? actual.size() : actualLineEnd + 1;
+			expectedLineStart = (expectedLineEnd == expected.size()) ? expected.size() : expectedLineEnd + 1;
+		}
+
+		if (!same) {
+			failedCases.push_back(testCase.relativeName.generic_string() + ": output_mismatch");
+			std::cout << "FAIL " << testCase.relativeName.generic_string() << " output_mismatch\n";
+			continue;
+		}
+
+		++passed;
+		std::cout << "PASS " << testCase.relativeName.generic_string() << '\n';
+	}
+
+	const size_t total = cases.size();
+	const size_t failed = total - passed;
+	std::cout << "TOTAL " << total << " PASS " << passed << " FAIL " << failed << '\n';
+
+	if (!failedCases.empty()) {
+		std::cout << "FAILED_CASES\n";
+		for (const auto& item : failedCases) {
+			std::cout << item << '\n';
+		}
+		return 1;
+	}
+
+	return 0;
+}
 // To do
