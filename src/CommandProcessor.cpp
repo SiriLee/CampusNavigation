@@ -164,6 +164,10 @@ void CommandProcessor::cmdAddRoad(const std::vector<std::string>& args) {
         std::stoi(args[3]), // walk_time
         args[4]  // status
     };
+    if (!graph_.placeExists(road.from_id) || !graph_.placeExists(road.to_id)) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return;
+    }
     if (!graph_.addRoad(road)) {
         std::cout << "ERROR duplicate_road_or_place_not_found" << std::endl;
         return;
@@ -262,11 +266,11 @@ void CommandProcessor::cmdQueryCategory(const std::vector<std::string>& args) {
     std::sort(filtered.begin(), filtered.end(), [](const Place& a, const Place& b) {
         return a.place_id < b.place_id;
     });
+    std::cout << "CATEGORY " << category << " " << filtered.size();
     for (const auto& place : filtered) {
-        std::cout << "PLACE " << place.place_id << " " << place.display_name << " " 
-                  << place.category << " " << place.stay_time << " "
-                  << place.open_time << " " << place.close_time << std::endl;
+        std::cout << " " << place.place_id;
     }
+    std::cout << std::endl;
 }
 
 void CommandProcessor::cmdADJ(const std::vector<std::string>& args) {
