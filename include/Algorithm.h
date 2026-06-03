@@ -23,11 +23,6 @@ using VertexFilter = std::function<bool(const std::string&)>;
 PathResult dijkstra(const LGraph& graph, const std::string& from, const std::string& to, 
     WeightFunc weightFunc, VertexFilter vertexFilter = nullptr);
 
-// 最短路径计算，mode: "DIST" 或 "TIME"，仅考虑 open 边
-[[deprecated("Use dijkstra instead")]] 
-PathResult shortestPath(const LGraph& graph, const std::string& from, const std::string& to, 
-    const std::string& mode); // mode: "DIST" 或 "TIME"
-
 // 必经点路径规划
 PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode, const std::vector<std::string>& mustPass); // mustPass: p1, p2, ..., pk
