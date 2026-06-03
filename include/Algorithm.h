@@ -5,9 +5,19 @@
 #include <utility>
 #include <vector>
 #include <functional>
+#include <unordered_map>
 
-// 连通分量分析，返回<分量个数, 各分量大小列表（已降序）>
-std::pair<int, std::vector<int>> computeComponents(const LGraph& graph);
+using WeightFunc = std::function<int(const Road&)>; // 权重获取器类型
+using VertexFilter = std::function<bool(const std::string&)>; // 顶点过滤器类型
+
+class DSU {
+public:
+    void makeSet(const std::string& x);
+    std::string find(const std::string& x);
+    void unite(const std::string& x, const std::string& y);
+private:
+    std::unordered_map<std::string, std::string> parent_;
+};
 
 // 通用 Dijkstra 结果结构体
 struct PathResult {
@@ -15,10 +25,17 @@ struct PathResult {
     int totalCost; // 总距离/耗时
     std::vector<std::string> nodes; // 路径上的地点 ID 列表
 };
-// 权重获取器类型：接受 const Road&，返回 int
-using WeightFunc = std::function<int(const Road&)>;
-// 顶点过滤器类型：接受 const std::string& vertex_id，返回 bool（是否允许经过）
-using VertexFilter = std::function<bool(const std::string&)>;
+
+// 最小生成树结果结构体
+struct MSTResult {
+    bool connected; // 是否连通
+    int totalDistance; // 总距离
+    std::vector<Road> edges; // 最小生成树的边列表
+};
+
+// 连通分量分析，返回<分量个数, 各分量大小列表（已降序）>
+std::pair<int, std::vector<int>> computeComponents(const LGraph& graph);
+
 // 通用 Dijkstra 算法
 PathResult dijkstra(const LGraph& graph, const std::string& from, const std::string& to, 
     WeightFunc weightFunc, VertexFilter vertexFilter = nullptr);
@@ -29,5 +46,8 @@ VertexFilter makeTimeFilter(const LGraph& graph, const std::string& time_str);
 // 必经点路径规划
 PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode, const std::vector<std::string>& mustPass); // mustPass: p1, p2, ..., pk
+
+// 最小生成树算法
+MSTResult computeMST(const LGraph& graph);
 
 #endif // ALGORITHM_H
