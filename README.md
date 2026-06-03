@@ -12,4 +12,4 @@ cmake --build build
 # 运行（Windows + MinGW）
 .\build\CampusNavigation.exe
 
-.\build\CampusNavigation < test_commands.txt > output.txt
+.\build\CampusNavigation < commands.txt > output.txt
