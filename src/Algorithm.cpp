@@ -255,7 +255,12 @@ CriticalResult computeCritical(const LGraph& graph) {
 
     // 7. 收集关键边（标准化 from_id <= to_id）
     for (const auto& [u, v] : bridges) {
-        result.edges.emplace_back(indexToId[std::min(u, v)], indexToId[std::max(u, v)]);
+        auto left = indexToId[u];
+        auto right = indexToId[v];
+        if (left > right) {
+            std::swap(left, right);
+        }
+        result.edges.emplace_back(left, right);
     }
     std::sort(result.edges.begin(), result.edges.end()); // 升序排序
 
