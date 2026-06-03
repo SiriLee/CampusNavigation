@@ -32,6 +32,7 @@ void CommandProcessor::initHandlers() {
     handlers_["COMPONENTS"] = [this](const std::vector<std::string>& args) { cmdComponents(args); };
     handlers_["SHORTEST"] = [this](const std::vector<std::string>& args) { cmdShortest(args); };
     handlers_["TIMED_SHORTEST"] = [this](const std::vector<std::string>& args) { cmdTimedShortest(args); };
+    handlers_["MUST_PASS"] = [this](const std::vector<std::string>& args) { cmdMustPass(args); };
 }
 
 void CommandProcessor::run() {
@@ -367,6 +368,48 @@ void CommandProcessor::cmdTimedShortest(const std::vector<std::string>& args) {
         } // 顶点过滤器：检查时间是否在开放时间内
     );
 
+    if (!result.reachable) {
+        std::cout << "NO_PATH" << std::endl;
+    } else {
+        std::cout << "PATH " << mode << " " << result.totalCost << " NODES";
+        for (const auto& node : result.nodes) {
+            std::cout << " " << node;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void CommandProcessor::cmdMustPass(const std::vector<std::string>& args) {
+    if (args.size() < 5) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from = args[0];
+    const std::string& to = args[1];
+    const std::string& mode = args[2];
+    int k = std::stoi(args[3]);
+    if (args.size() != 4 + k) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    if (mode != "DIST" && mode != "TIME") {
+        std::cout << "ERROR invalid_mode" << std::endl;
+        return; // 模式错误
+    }
+    if (!graph_.placeExists(from) || !graph_.placeExists(to)) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return; // 起点或终点不存在
+    }
+
+    std::vector<std::string> mustPass(args.begin() + 4, args.end());
+    for (const auto& p : mustPass) {
+        if (!graph_.placeExists(p)) {
+            std::cout << "ERROR place_not_found: " << p << std::endl;
+            return; // 必经点不存在
+        }
+    }
+
+    auto result = mustPassPath(graph_, from, to, mode, mustPass);
     if (!result.reachable) {
         std::cout << "NO_PATH" << std::endl;
     } else {
