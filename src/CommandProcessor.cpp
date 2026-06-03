@@ -113,7 +113,7 @@ void CommandProcessor::cmdAddPlace(const std::vector<std::string>& args) {
         args[5]  // close_time
     };
     if (!graph_.addPlace(place)) {
-        std::cout << "ERROR duplicate_place_id" << std::endl;
+        std::cout << "ERROR place_already_exists" << std::endl;
         return;
     }
     std::cout << "OK" << std::endl;
@@ -145,8 +145,13 @@ void CommandProcessor::cmdUpdatePlace(const std::vector<std::string>& args) {
         std::cout << "ERROR place_not_found" << std::endl;
         return;
     }
+    if (field != "display_name" && field != "category" && field != "stay_time" &&
+        field != "open_time" && field != "close_time") {
+        std::cout << "ERROR invalid_field" << std::endl;
+        return;
+    }
     if (!graph_.updatePlace(*place, field, value)) {
-        std::cout << "ERROR invalid_field_or_value" << std::endl;
+        std::cout << "ERROR invalid_field" << std::endl;
         return;
     }
     std::cout << "OK" << std::endl;
@@ -169,7 +174,7 @@ void CommandProcessor::cmdAddRoad(const std::vector<std::string>& args) {
         return;
     }
     if (!graph_.addRoad(road)) {
-        std::cout << "ERROR duplicate_road_or_place_not_found" << std::endl;
+        std::cout << "ERROR road_already_exists" << std::endl;
         return;
     }
     std::cout << "OK" << std::endl;
@@ -198,8 +203,16 @@ void CommandProcessor::cmdUpdateRoad(const std::vector<std::string>& args) {
     const std::string& to_id = args[1];
     const std::string& field = args[2];
     const std::string& value = args[3];
+    if (!graph_.roadExists(from_id, to_id)) {
+        std::cout << "ERROR road_not_found" << std::endl;
+        return;
+    }
+    if (field != "distance" && field != "walk_time" && field != "status") {
+        std::cout << "ERROR invalid_field" << std::endl;
+        return;
+    }
     if (!graph_.updateRoad(from_id, to_id, field, value)) {
-        std::cout << "ERROR invalid_field_or_value" << std::endl;
+        std::cout << "ERROR invalid_field" << std::endl;
         return;
     }
     std::cout << "OK" << std::endl;
@@ -415,7 +428,7 @@ void CommandProcessor::cmdMustPass(const std::vector<std::string>& args) {
     std::vector<std::string> mustPass(args.begin() + 4, args.end());
     for (const auto& p : mustPass) {
         if (!graph_.placeExists(p)) {
-            std::cout << "ERROR place_not_found: " << p << std::endl;
+            std::cout << "ERROR place_not_found" << std::endl;
             return; // 必经点不存在
         }
     }
