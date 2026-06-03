@@ -43,21 +43,21 @@ struct CriticalResult {
 // 连通分量分析，返回<分量个数, 各分量大小列表（已降序）>
 std::pair<int, std::vector<int>> computeComponents(const LGraph& graph);
 
-// 通用 Dijkstra 算法
+// 通用 Dijkstra 算法（已排序）
 PathResult dijkstra(const LGraph& graph, const std::string& from, const std::string& to, 
     WeightFunc weightFunc, VertexFilter vertexFilter = nullptr);
 
 // 辅助时间过滤器函数
 VertexFilter makeTimeFilter(const LGraph& graph, const std::string& time_str);
 
-// 必经点路径规划
+// 必经点路径规划（已排序）
 PathResult mustPassPath(const LGraph& graph, const std::string& from, const std::string& to, 
     const std::string& mode, const std::vector<std::string>& mustPass); // mustPass: p1, p2, ..., pk
 
-// 最小生成树算法
+// 最小生成树算法（未排序）
 MSTResult computeMST(const LGraph& graph);
 
-// 关键节点和关键边分析
+// 关键节点和关键边分析（已排序）
 CriticalResult computeCritical(const LGraph& graph);
 
 #endif // ALGORITHM_H
