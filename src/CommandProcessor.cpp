@@ -322,7 +322,12 @@ void CommandProcessor::cmdShortest(const std::vector<std::string>& args) {
         std::cout << "ERROR invalid_mode" << std::endl;
         return;
     }
-    auto result = shortestPath(graph_, from, to, mode); // 已废弃，建议使用 dijkstra
+    
+    auto result = dijkstra(graph_, from, to, 
+        [&mode](const Road& road) {
+            return (mode == "DIST") ? road.distance : road.walk_time;
+        }
+    );
     if (!result.reachable) {
         std::cout << "NO_PATH" << std::endl;
     } else {
