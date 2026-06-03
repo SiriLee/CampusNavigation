@@ -5,6 +5,9 @@ project(CampusNavigation)              # 项目名称
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 启用测试
+enable_testing()
+
 # 添加可执行文件
 add_executable(CampusNavigation
     src/main.cpp
@@ -16,3 +19,6 @@ add_executable(CampusNavigation
 
 # 指定头文件目录
 target_include_directories(CampusNavigation PRIVATE include)
+
+# 添加测试子目录
+add_subdirectory(tests)
