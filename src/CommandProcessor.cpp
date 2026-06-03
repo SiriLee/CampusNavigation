@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <tuple>
 #include <functional>
+#include <cctype>
 
 CommandProcessor::CommandProcessor(LGraph& graph) : graph_(graph) {
     initHandlers();
@@ -30,6 +31,7 @@ void CommandProcessor::initHandlers() {
     handlers_["ADJ"] = [this](const std::vector<std::string>& args) { cmdADJ(args); };
     handlers_["COMPONENTS"] = [this](const std::vector<std::string>& args) { cmdComponents(args); };
     handlers_["SHORTEST"] = [this](const std::vector<std::string>& args) { cmdShortest(args); };
+    handlers_["TIMED_SHORTEST"] = [this](const std::vector<std::string>& args) { cmdTimedShortest(args); };
 }
 
 void CommandProcessor::run() {
@@ -318,7 +320,53 @@ void CommandProcessor::cmdShortest(const std::vector<std::string>& args) {
         std::cout << "ERROR invalid_mode" << std::endl;
         return;
     }
-    auto result = shortestPath(graph_, from, to, mode);
+    auto result = shortestPath(graph_, from, to, mode); // 已废弃，建议使用 dijkstra
+    if (!result.reachable) {
+        std::cout << "NO_PATH" << std::endl;
+    } else {
+        std::cout << "PATH " << mode << " " << result.totalCost << " NODES";
+        for (const auto& node : result.nodes) {
+            std::cout << " " << node;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void CommandProcessor::cmdTimedShortest(const std::vector<std::string>& args) {
+    if (!checkArgCount(args, 4)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from = args[0];
+    const std::string& to = args[1];
+    const std::string& time_str = args[2]; // HH:MM
+    const std::string& mode = args[3];
+    if (!graph_.placeExists(from) || !graph_.placeExists(to)) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return; // 起点或终点不存在
+    }
+    if (mode != "DIST" && mode != "TIME") {
+        std::cout << "ERROR invalid_mode" << std::endl;
+        return; // 模式错误
+    }
+    if (time_str.size() != 5 || time_str[2] != ':' || 
+        !std::isdigit(time_str[0]) || !std::isdigit(time_str[1]) || 
+        !std::isdigit(time_str[3]) || !std::isdigit(time_str[4])) {
+        std::cout << "ERROR invalid_time" << std::endl;
+        return; // 时间格式错误
+    }
+
+    // 使用通用 Dijkstra，增加时间过滤器
+    auto result = dijkstra(graph_, from, to, 
+        [&mode](const Road& road) {
+            return (mode == "DIST") ? road.distance : road.walk_time;
+        }, // 模式对应的权重函数
+        [this, &time_str](const std::string& vertex_id) {
+            auto* place = graph_.getPlace(vertex_id);
+            return place && (place->open_time <= time_str && time_str <= place->close_time);
+        } // 顶点过滤器：检查时间是否在开放时间内
+    );
+
     if (!result.reachable) {
         std::cout << "NO_PATH" << std::endl;
     } else {
