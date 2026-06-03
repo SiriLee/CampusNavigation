@@ -16,7 +16,6 @@ public:
         const std::string& field, const std::string& value); // 更新地点信息（字段-值）
     const Place* getPlace(const std::string& id) const; // 获取地点信息
     bool placeExists(const std::string& id) const; // 检查地点是否存在
-    bool isPlaceOpenAtTime(const std::string& id, const std::string& time) const; // 检查地点在特定时间是否开放
 
     // 道路操作
     bool addRoad(const Road& road); // 添加道路（无向，需添加两条有向边）

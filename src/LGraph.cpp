@@ -75,15 +75,6 @@ bool LGraph::placeExists(const std::string& id) const {
     return places_.count(id) > 0;
 }
 
-bool LGraph::isPlaceOpenAtTime(const std::string& id, const std::string& time) const {
-    auto it = places_.find(id);
-    if (it == places_.end()) {
-        return false; // 地点不存在
-    }
-    const Place& p = it->second;
-    return (p.open_time <= time && time <= p.close_time);
-}
-
 bool LGraph::addRoad(const Road& road) {
     Road norm_road = normalizeEdge(road);
     std::string edge_key = makeEdgeKey(norm_road.from_id, norm_road.to_id);
