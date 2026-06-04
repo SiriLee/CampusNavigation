@@ -268,6 +268,17 @@ CriticalResult computeCritical(const LGraph& graph) {
 }
 
 KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, const std::string& to, int K) {
+    if (K == 0) { 
+        // K=0 时退化为普通最短路径
+        auto pathResult = dijkstra(graph, from, to, [](const Road& edge) { return edge.walk_time; });
+        KPathResult result;
+        result.reachable = pathResult.reachable;
+        result.totalTime = pathResult.totalCost;
+        result.usedK = 0;
+        result.nodes = std::move(pathResult.nodes);
+        return result;
+    }
+
     using State = std::pair<std::string, int>; // (place_id, used)
     auto hashState = [](const State& s) {
         return std::hash<std::string>()(s.first) ^ std::hash<int>()(s.second);
@@ -364,7 +375,7 @@ KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, cons
         return a.to_id < b.to_id;
     });
     result.fastEdges = std::move(fastEdges);
-    
+
     return result;
 }
 
