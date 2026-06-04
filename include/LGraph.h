@@ -36,7 +36,8 @@ public:
     // 清理
     void clear(); // 清空所有数据，用于 LOAD 命令
 
-    // To do
+    // 辅助函数
+    Road normalizeEdge(const Road& road) const; // 标准化道路（from_id <= to_id）
 private:
     std::unordered_map<std::string, Place> places_; // id → Place
     std::unordered_map<std::string, std::vector<Road>> adj_; // from_id → 边列表
@@ -44,7 +45,6 @@ private:
 
     // 辅助函数
     std::string makeEdgeKey(const std::string& from, const std::string& to) const; // min(id) + "|" + max(id)
-    Road normalizeEdge(const Road& road) const; // 标准化道路（from_id <= to_id）
 };
 
 #endif // LGRAPH_H
