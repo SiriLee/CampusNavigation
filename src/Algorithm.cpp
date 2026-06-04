@@ -284,9 +284,9 @@ KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, cons
         return std::hash<std::string>()(s.first) ^ std::hash<int>()(s.second);
     };
     // 距离数组 (place_id, used) -> totalTime
-    std::unordered_map<State, int, decltype(hashState)> dist(0);
+    std::unordered_map<State, int, decltype(hashState)> dist(0, hashState);
     // 前驱记录 (place_id, used) -> ((prev_place_id, prev_used), usedK)
-    std::unordered_map<State, std::pair<State, bool>, decltype(hashState)> prev(0);
+    std::unordered_map<State, std::pair<State, bool>, decltype(hashState)> prev(0, hashState);
     
     // Dijkstra with state (place_id, used)
     using PQElement = std::pair<int, State>; // (totalTime, (place_id, used))
@@ -303,15 +303,14 @@ KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, cons
         }
         // Explore neighbors
         for (const auto& edge : graph.getAdjacent(place_id)) {
+            if (edge.status != "open") continue; // 只能通过 open 边
             // 1. 不使用券
-            if (edge.status == "open") {
-                int newTime = time + edge.walk_time;
-                State newState = { (edge.from_id == place_id) ? edge.to_id : edge.from_id, used };
-                if (dist.count(newState) == 0 || newTime < dist[newState]) {
-                    dist[newState] = newTime;
-                    prev[newState] = { state, false }; // 没有使用券
-                    pq.push({newTime, newState});
-                }
+            int newTime = time + edge.walk_time;
+            State newState = { (edge.from_id == place_id) ? edge.to_id : edge.from_id, used };
+            if (dist.count(newState) == 0 || newTime < dist[newState]) {
+                dist[newState] = newTime;
+                prev[newState] = { state, false }; // 没有使用券
+                pq.push({newTime, newState});
             }
             // 2. 使用券（如果还有券可用）
             if (used < K) {
@@ -328,9 +327,16 @@ KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, cons
 
     KPathResult result;
     // 所有层均未达到to
-    if (dist.count({to, 0}) == 0 && dist.count({to, 1}) == 0 && dist.count({to, 2}) == 0) {
+    bool anyReachable = false;
+    for (int used = 0; used <= K; ++used) {
+        if (dist.count({to, used}) > 0) {
+            anyReachable = true;
+            break;
+        }
+    }
+    if (!anyReachable) {
         result.reachable = false;
-        return result;
+        return result; // 无法到达
     }
 
     // 最优used层
@@ -360,6 +366,7 @@ KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, cons
             }
         }
     }
+    path.push_back(from);
 
     // 构建结果
     result.reachable = true;
