@@ -314,7 +314,7 @@ KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, cons
             }
             // 2. 使用券（如果还有券可用）
             if (used < K) {
-                int newTime = time + edge.walk_time / 3; // 使用券后时间缩短
+                int newTime = time + (edge.walk_time + 2 ) / 3; // 使用券后时间缩短(向上取整)
                 State newState = { (edge.from_id == place_id) ? edge.to_id : edge.from_id, used + 1 };
                 if (dist.count(newState) == 0 || newTime < dist[newState]) {
                     dist[newState] = newTime;
