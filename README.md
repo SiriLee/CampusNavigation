@@ -81,16 +81,22 @@ ctest --test-dir build --output-on-failure
 
 ### 判定准则
 
-默认采用“逐行比较”。同时为了避免多解场景导致的非必要失败，对以下输出做了规则化比较：
+默认采用”逐行比较”。同时为了避免多解场景导致的非必要失败，对以下输出做了规则化比较：
 
 1. `PATH ...` 行：
 	- 要求 `PATH <MODE> <TOTAL_COST> NODES ...` 的 `MODE` 与 `TOTAL_COST` 一致；
 	- 路径首节点和末节点与参考输出一致；
 	- 中间节点允许不同（用于兼容等代价多条可行路径）。
+	- **已知局限**：`MUST_PASS` 的必经点是否确实被访问，无法仅从 PATH 输出行验证；
+	  若需验证必经点，应解析 `command.txt` 识别 MUST_PASS 行并检查必经点在路径中的出现顺序。
 2. `MST ...` 行：
 	- 要求 `MST <TOTAL_DISTANCE> EDGES ...` 的 `TOTAL_DISTANCE` 一致；
+	- 要求边数一致（连通图的任何合法 MST 都有 V-1 条边）；
 	- 允许具体边集合/顺序与参考输出不同（用于兼容同权边导致的多种等价 MST）。
-3. 其他行：
+3. `CRITICAL ...` 行：
+	- 要求 `CRITICAL NODES <n> <nodes...> EDGES <m> <edges...>` 的节点数和边数一致；
+	- 使用集合比较验证割点集合和桥集合（与顺序无关）。
+4. 其他行：
 	- 仍要求与参考输出严格一致（在完成归一化之后）。
 
 ### 失败类型说明
@@ -100,8 +106,9 @@ ctest --test-dir build --output-on-failure
 1. `cannot_open_command_file`：无法打开用例输入文件。
 2. `cannot_create_output_file`：无法创建输出文件。
 3. `cannot_launch_program`：测试程序无法启动被测程序。
-4. `process_exit_<code>`：被测程序非 0 退出。
-5. `output_mismatch`：输出与判定准则不一致。
+4. `process_timeout`：被测程序超时未退出（当前超时阈值：30 秒）。
+5. `process_exit_<code>`：被测程序非 0 退出。
+6. `output_mismatch`：输出与判定准则不一致。
 
 ### 设计准则（维护建议）
 

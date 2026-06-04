@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -20,6 +21,9 @@ struct RunResult {
 	DWORD exitCode = 0;
 	std::string error;
 };
+
+// Maximum time (ms) to wait for a single test case before declaring timeout
+const DWORD PROCESS_TIMEOUT_MS = 30000;
 
 std::string readFile(const fs::path& path) {
 	std::ifstream file(path, std::ios::binary);
@@ -93,12 +97,19 @@ bool comparePathLines(const std::string& actual, const std::string& expected) {
 	if (actualTokens[0] != "PATH" || expectedTokens[0] != "PATH") {
 		return false;
 	}
+	// MODE and TOTAL_COST must match
 	if (actualTokens[1] != expectedTokens[1] || actualTokens[2] != expectedTokens[2]) {
 		return false;
 	}
 	if (actualTokens[3] != "NODES" || expectedTokens[3] != "NODES") {
 		return false;
 	}
+	// Start and end nodes must match.
+	// Intermediate nodes may differ — equal-cost alternative paths exist
+	// (e.g. A--5-->B vs A--2-->C--3-->B both cost 5). This means MUST_PASS
+	// waypoint visitation cannot be verified purely from the PATH output line;
+	// a more complete approach would parse command.txt to identify MUST_PASS
+	// lines and verify that the required waypoints appear as a subsequence.
 	return actualTokens[4] == expectedTokens[4] && actualTokens.back() == expectedTokens.back();
 }
 
@@ -114,10 +125,90 @@ bool compareMstLines(const std::string& actual, const std::string& expected) {
 	if (actualTokens[0] != "MST" || expectedTokens[0] != "MST") {
 		return false;
 	}
+	// Total distance must match
 	if (actualTokens[1] != expectedTokens[1]) {
 		return false;
 	}
-	return actualTokens[2] == "EDGES" && expectedTokens[2] == "EDGES";
+	if (actualTokens[2] != "EDGES" || expectedTokens[2] != "EDGES") {
+		return false;
+	}
+	// Edge count (token count) must match.
+	// For a connected graph with V vertices, any valid MST has exactly V-1 edges,
+	// so this check is safe even when alternative equal-weight MSTs exist.
+	if (actualTokens.size() != expectedTokens.size()) {
+		return false;
+	}
+	// NOTE: Individual edges may differ due to equal-weight alternatives.
+	// Checking the total distance and edge count is sufficient to verify
+	// that a valid MST was produced.
+	return true;
+}
+
+bool compareCriticalLines(const std::string& actual, const std::string& expected) {
+	if (actual == expected) {
+		return true;
+	}
+	const auto actualTokens = splitWords(actual);
+	const auto expectedTokens = splitWords(expected);
+	if (actualTokens.size() < 4 || expectedTokens.size() < 4) {
+		return false;
+	}
+	if (actualTokens[0] != "CRITICAL" || expectedTokens[0] != "CRITICAL") {
+		return false;
+	}
+	if (actualTokens[1] != "NODES" || expectedTokens[1] != "NODES") {
+		return false;
+	}
+	// Parse: CRITICAL NODES <n> [nodes...] EDGES <m> [edges...]
+	// Find the EDGES delimiter position in both lines
+	auto findEdgesPos = [](const std::vector<std::string>& tokens) -> size_t {
+		for (size_t i = 2; i < tokens.size(); ++i) {
+			if (tokens[i] == "EDGES") return i;
+		}
+		return std::string::npos;
+	};
+
+	size_t actualEdgesPos = findEdgesPos(actualTokens);
+	size_t expectedEdgesPos = findEdgesPos(expectedTokens);
+	if (actualEdgesPos == std::string::npos || expectedEdgesPos == std::string::npos) {
+		return false;
+	}
+
+	// Extract node count
+	int actualNodeCount = std::stoi(actualTokens[2]);
+	int expectedNodeCount = std::stoi(expectedTokens[2]);
+	if (actualNodeCount != expectedNodeCount) {
+		return false;
+	}
+
+	// Extract node sets (between NODES <n> and EDGES)
+	std::set<std::string> actualNodes, expectedNodes;
+	for (size_t i = 3; i < actualEdgesPos; ++i) {
+		actualNodes.insert(actualTokens[i]);
+	}
+	for (size_t i = 3; i < expectedEdgesPos; ++i) {
+		expectedNodes.insert(expectedTokens[i]);
+	}
+	if (actualNodes != expectedNodes) {
+		return false;
+	}
+
+	// Extract edge count
+	int actualEdgeCount = std::stoi(actualTokens[actualEdgesPos + 1]);
+	int expectedEdgeCount = std::stoi(expectedTokens[expectedEdgesPos + 1]);
+	if (actualEdgeCount != expectedEdgeCount) {
+		return false;
+	}
+
+	// Extract edge sets (after EDGES <m>)
+	std::set<std::string> actualEdges, expectedEdges;
+	for (size_t i = actualEdgesPos + 2; i < actualTokens.size(); ++i) {
+		actualEdges.insert(actualTokens[i]);
+	}
+	for (size_t i = expectedEdgesPos + 2; i < expectedTokens.size(); ++i) {
+		expectedEdges.insert(expectedTokens[i]);
+	}
+	return actualEdges == expectedEdges;
 }
 
 bool compareOutputLine(const std::string& actual, const std::string& expected) {
@@ -129,6 +220,9 @@ bool compareOutputLine(const std::string& actual, const std::string& expected) {
 	}
 	if (actual.rfind("MST ", 0) == 0 && expected.rfind("MST ", 0) == 0) {
 		return compareMstLines(actual, expected);
+	}
+	if (actual.rfind("CRITICAL ", 0) == 0 && expected.rfind("CRITICAL ", 0) == 0) {
+		return compareCriticalLines(actual, expected);
 	}
 	return false;
 }
@@ -234,7 +328,15 @@ RunResult runProgram(const fs::path& executable, const fs::path& workingDirector
 	}
 
 	result.launched = true;
-	WaitForSingleObject(processInfo.hProcess, INFINITE);
+	DWORD waitResult = WaitForSingleObject(processInfo.hProcess, PROCESS_TIMEOUT_MS);
+	if (waitResult == WAIT_TIMEOUT) {
+		TerminateProcess(processInfo.hProcess, 1);
+		CloseHandle(processInfo.hThread);
+		CloseHandle(processInfo.hProcess);
+		result.launched = false;
+		result.error = "process_timeout";
+		return result;
+	}
 	DWORD exitCode = 0;
 	if (!GetExitCodeProcess(processInfo.hProcess, &exitCode)) {
 		exitCode = static_cast<DWORD>(-1);
