@@ -35,6 +35,7 @@ void CommandProcessor::initHandlers() {
     handlers_["MUST_PASS"] = [this](const std::vector<std::string>& args) { cmdMustPass(args); };
     handlers_["MST"] = [this](const std::vector<std::string>& args) { cmdMST(args); };
     handlers_["CRITICAL"] = [this](const std::vector<std::string>& args) { cmdCritical(args); };
+    handlers_["SHORTEST_K"] = [this](const std::vector<std::string>& args) { cmdShortestK(args); };
 }
 
 void CommandProcessor::run() {
@@ -493,6 +494,42 @@ void CommandProcessor::cmdCritical(const std::vector<std::string>& args) {
         std::cout << " " << edge.first << "-" << edge.second;
     }
     std::cout << std::endl;
+}
+
+void CommandProcessor::cmdShortestK(const std::vector<std::string>& args) {
+    // SHORTEST_K <from_id> <to_id> <K>
+    if (!checkArgCount(args, 3)) {
+        std::cout << "ERROR invalid_arguments" << std::endl;
+        return;
+    }
+    const std::string& from = args[0];
+    const std::string& to = args[1];
+    int K = std::stoi(args[2]);
+    if (!graph_.placeExists(from) || !graph_.placeExists(to)) {
+        std::cout << "ERROR place_not_found" << std::endl;
+        return; // 起点或终点不存在
+    }
+    if (K < 0 || K > 10) {
+        std::cout << "ERROR invalid_k" << std::endl;
+        return; // K 不能为负数且不超过10
+    }
+
+    auto result = shortestPathWithK(graph_, from, to, K);
+    if (!result.reachable) {
+        std::cout << "NO_PATH" << std::endl;
+    } else {
+        // PATH <total_time> K_USED <k_used> NODES <id1> <id2> ... FAST <count> [<u1>-<v1> <u2>-<v2> ...]
+        std::cout << "PATH " << result.totalTime << " K_USED " << result.usedK 
+                  << " NODES";
+        for (const auto& node : result.nodes) {
+            std::cout << " " << node;
+        }
+        std::cout << " FAST " << result.fastEdges.size();
+        for (const auto& edge : result.fastEdges) {
+            std::cout << " " << edge.from_id << "-" << edge.to_id;
+        }
+        std::cout << std::endl;
+    }
 }
 
 std::vector<std::string> CommandProcessor::splitLine(const std::string& line) {

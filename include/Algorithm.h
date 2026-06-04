@@ -69,7 +69,7 @@ MSTResult computeMST(const LGraph& graph);
 // 关键节点和关键边分析（已排序）
 CriticalResult computeCritical(const LGraph& graph);
 
-// 分层图最短路径算法
+// 分层图最短路径算法（已排序）
 KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, const std::string& to, int K);
 
 #endif // ALGORITHM_H
