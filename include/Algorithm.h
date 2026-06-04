@@ -40,6 +40,15 @@ struct CriticalResult {
     std::vector<std::pair<std::string, std::string>> edges; // 桥（存储为地点 ID 对）
 };
 
+// 共享单车券（分层图最短路径）结果结构体
+struct KPathResult {
+    bool reachable;
+    int totalTime; // 总耗时（分钟）
+    int usedK; // 实际用券数
+    std::vector<std::string> nodes; // 节点序列
+    std::vector<Road> fastEdges; // 用券的边列表（需标准化）
+};
+
 // 连通分量分析，返回<分量个数, 各分量大小列表（已降序）>
 std::pair<int, std::vector<int>> computeComponents(const LGraph& graph);
 
@@ -59,5 +68,8 @@ MSTResult computeMST(const LGraph& graph);
 
 // 关键节点和关键边分析（已排序）
 CriticalResult computeCritical(const LGraph& graph);
+
+// 分层图最短路径算法
+KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, const std::string& to, int K);
 
 #endif // ALGORITHM_H

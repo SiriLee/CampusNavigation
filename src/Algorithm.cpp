@@ -266,3 +266,109 @@ CriticalResult computeCritical(const LGraph& graph) {
 
     return result;
 }
+
+KPathResult shortestPathWithK(const LGraph& graph, const std::string& from, const std::string& to, int K) {
+    using State = std::pair<std::string, int>; // (place_id, used)
+    auto hashState = [](const State& s) {
+        return std::hash<std::string>()(s.first) ^ std::hash<int>()(s.second);
+    };
+    // 距离数组 (place_id, used) -> totalTime
+    std::unordered_map<State, int, decltype(hashState)> dist(0);
+    // 前驱记录 (place_id, used) -> ((prev_place_id, prev_used), usedK)
+    std::unordered_map<State, std::pair<State, bool>, decltype(hashState)> prev(0);
+    
+    // Dijkstra with state (place_id, used)
+    using PQElement = std::pair<int, State>; // (totalTime, (place_id, used))
+    std::priority_queue<PQElement, std::vector<PQElement>, std::greater<>> pq;
+    dist[{from, 0}] = 0;
+    pq.push({0, {from, 0}});
+    while (!pq.empty()) {
+        auto [time, state] = pq.top();
+        pq.pop();
+        const auto& [place_id, used] = state;
+        if (time > dist[state]) continue;
+        if (place_id == to) {
+            break; // 找到目标，提前退出
+        }
+        // Explore neighbors
+        for (const auto& edge : graph.getAdjacent(place_id)) {
+            // 1. 不使用券
+            if (edge.status == "open") {
+                int newTime = time + edge.walk_time;
+                State newState = { (edge.from_id == place_id) ? edge.to_id : edge.from_id, used };
+                if (dist.count(newState) == 0 || newTime < dist[newState]) {
+                    dist[newState] = newTime;
+                    prev[newState] = { state, false }; // 没有使用券
+                    pq.push({newTime, newState});
+                }
+            }
+            // 2. 使用券（如果还有券可用）
+            if (used < K) {
+                int newTime = time + edge.walk_time / 3; // 使用券后时间缩短
+                State newState = { (edge.from_id == place_id) ? edge.to_id : edge.from_id, used + 1 };
+                if (dist.count(newState) == 0 || newTime < dist[newState]) {
+                    dist[newState] = newTime;
+                    prev[newState] = { state, true }; // 使用了券
+                    pq.push({newTime, newState});
+                }
+            }
+        }
+    }
+
+    KPathResult result;
+    // 所有层均未达到to
+    if (dist.count({to, 0}) == 0 && dist.count({to, 1}) == 0 && dist.count({to, 2}) == 0) {
+        result.reachable = false;
+        return result;
+    }
+
+    // 最优used层
+    State bestState = {to, 0};
+    for (int used = 0; used <= K; ++used) {
+        State candidate = {to, used};
+        if (dist.count(candidate) > 0 && (dist.count(bestState) == 0 || dist[candidate] < dist[bestState])) {
+            bestState = candidate;
+        }
+    }
+
+    // bestState -> (from, 0) 回溯路径
+    std::vector<std::string> path;
+    std::vector<Road> fastEdges;
+    for (State s = bestState; prev.count(s) > 0; s = prev[s].first) {
+        path.push_back(s.first);
+        if (prev[s].second) { // 使用了券
+            const auto& [prevState, _] = prev[s];
+            std::string from = prevState.first;
+            std::string to = s.first;
+            // 获取标准化的边
+            for (const auto& edge : graph.getAdjacent(from)) {
+                if ((edge.from_id == from && edge.to_id == to) || (edge.from_id == to && edge.to_id == from)) {
+                    fastEdges.push_back(graph.normalizeEdge(edge));
+                    break;
+                }
+            }
+        }
+    }
+
+    // 构建结果
+    result.reachable = true;
+    result.totalTime = dist[bestState];
+    result.usedK = bestState.second;
+
+    // 节点序列反转
+    std::reverse(path.begin(), path.end());
+    result.nodes = std::move(path);
+    // 字典序排序 fastEdges
+    std::sort(fastEdges.begin(), fastEdges.end(), [](const Road& a, const Road& b) {
+        if (a.from_id != b.from_id) return a.from_id < b.from_id;
+        return a.to_id < b.to_id;
+    });
+    result.fastEdges = std::move(fastEdges);
+    
+    return result;
+}
+
+
+
+
+
