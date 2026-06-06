@@ -1,3 +1,6 @@
+#ifndef LGRAPH_COMMANDPROCESSOR_H
+#define LGRAPH_COMMANDPROCESSOR_H
+
 #include "LGraph.h"
 
 #include <string>
@@ -44,3 +47,5 @@ private:
     // 辅助函数：检查参数数量，输出错误并返回 false
     bool checkArgCount(const std::vector<std::string>& args, size_t expected);
 };
+
+#endif // LGRAPH_COMMANDPROCESSOR_H
