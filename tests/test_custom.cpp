@@ -1,16 +1,14 @@
-// tests/test_explore.cpp — Extended feature test suite (SHORTEST_K / coupons)
+// tests/test_custom.cpp — Custom scenario test suite
 #include "test_common.h"
 
 static bool compareOutputLine(const std::string& actual, const std::string& expected) {
 	if (actual == expected) return true;
 
-	// SHORTEST_K PATH lines contain "K_USED"
 	bool aIsK = (actual.find("K_USED") != std::string::npos);
 	bool eIsK = (expected.find("K_USED") != std::string::npos);
 	if (aIsK && eIsK)
 		return compareShortestKPathLines(actual, expected);
 
-	// Standard PATH lines
 	if (actual.rfind("PATH ", 0) == 0 && expected.rfind("PATH ", 0) == 0)
 		return compareStandardPathLines(actual, expected);
 	if (actual.rfind("MST ", 0) == 0 && expected.rfind("MST ", 0) == 0)
@@ -22,6 +20,6 @@ static bool compareOutputLine(const std::string& actual, const std::string& expe
 
 int main(int argc, char* argv[]) {
 	return runTestSuite(argc, argv,
-		"usage: CampusNavigationExploreTests <app_exe> <explore_root> <result_root>",
+		"usage: CampusNavigationCustomTests <app_exe> <custom_root> <result_root>",
 		compareOutputLine);
 }

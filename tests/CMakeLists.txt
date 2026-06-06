@@ -29,3 +29,20 @@ add_test(
 		${CMAKE_SOURCE_DIR}/test_data/explore
 		${CMAKE_BINARY_DIR}/test_outputs_explore
 )
+
+# ─── Custom scenario tests ───
+
+add_executable(CampusNavigationCustomTests
+	test_custom.cpp
+)
+
+target_compile_features(CampusNavigationCustomTests PRIVATE cxx_std_17)
+target_include_directories(CampusNavigationCustomTests PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+add_test(
+	NAME custom
+	COMMAND CampusNavigationCustomTests
+		$<TARGET_FILE:CampusNavigation>
+		${CMAKE_SOURCE_DIR}/test_data/custom
+		${CMAKE_BINARY_DIR}/test_outputs_custom
+)
