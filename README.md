@@ -1,6 +1,6 @@
 # Campus Navigation System
 
-C++ 校园导航命令行程序，支持地点/道路管理、最短路径规划、必经点路径、时刻约束路径、最小生成树、关键节点/边分析，以及共享单车券分层图最短路。
+C++ 校园导航程序，支持命令行（CLI）与图形化界面（GUI）两种交互方式。核心功能包括地点/道路管理、最短路径规划、必经点路径、时刻约束路径、最小生成树、关键节点/边分析，以及共享单车券分层图最短路。
 
 ---
 
@@ -8,9 +8,11 @@ C++ 校园导航命令行程序，支持地点/道路管理、最短路径规划
 
 ```
 CampusNavigation/
-├── CMakeLists.txt              # 根 CMake（C++17，含测试子目录）
+├── CMakeLists.txt              # 根 CMake（C++17，含 GUI option 和测试子目录）
+├── CMakePresets.json           # CMake 构建预设（default=CLI, gui=Qt6）
 ├── README.md
 ├── docs/
+│   ├── gui-user-guide.md       # GUI 用户指南（编译、操作、截图）
 │   ├── custom-dataset.md       # 自定义场景数据集说明
 │   └── adversarial-dataset.md  # 对抗样例数据集说明
 ├── include/                    # 头文件
@@ -20,7 +22,12 @@ CampusNavigation/
 │   ├── Algorithm.h             # 所有算法声明 + 结果结构体
 │   └── CommandProcessor.h      # 命令解析与分发
 ├── src/                        # 实现文件
-│   ├── main.cpp                # 入口：构造 LGraph → CommandProcessor → run()
+│   ├── main.cpp                # 入口：--gui → runGui() / 否则 CLI
+│   ├── gui_main.cpp            # GUI 入口 runGui()
+│   ├── gui/                    # GUI 源码
+│   │   ├── MainWindow.h/cpp    # 主窗口（菜单栏、控件栏、GraphWidget）
+│   │   ├── GraphWidget.h/cpp   # 图绘制（节点/边/高亮，手绘 QWidget）
+│   │   └── ForceLayout.h/cpp   # Fruchterman-Reingold 力导向布局
 │   ├── LGraph.cpp              # 图存储实现（邻接表 + 边键集合）
 │   ├── CsvIO.cpp               # CSV 加载与保存
 │   ├── Algorithm.cpp           # Dijkstra / Tarjan / Kruskal / BFS 等
@@ -48,26 +55,33 @@ CampusNavigation/
 | `CsvIO` | `loadPlaces` / `loadRoads` / `savePlaces` / `saveRoads`，自动跳过 CSV 表头 |
 | `Algorithm` | 所有图算法：Dijkstra、Tarjan、Kruskal、BFS 连通分量、分层图最短路 |
 | `CommandProcessor` | 从 `stdin` 逐行读取命令，按命令名分发到 handler；命令格式错误时输出 `ERROR` |
+| `MainWindow` | GUI 主窗口：菜单栏、控件栏、图数据加载与算法调用 |
+| `GraphWidget` | QWidget 子类，手绘节点（圆+标签）、边（实线/虚线）、路径高亮（绿色）、关键边（紫色） |
+| `ForceLayout` | Fruchterman-Reingold 力导向布局，70 次迭代，仅使用 open 边 |
 
 ---
 
 ## 编译与运行
 
-**环境要求**：CMake ≥ 3.10，GCC/MinGW 支持 C++17（或 MSVC）。
+**环境要求**：CMake ≥ 3.19（presets），GCC/MinGW 支持 C++17。GUI 额外需要 Qt 6 (Widgets 模块, MinGW 64-bit)。
 
 ```bash
-# 配置
-cmake -B build -G "MinGW Makefiles"
-
-# 编译
+# CLI 版本（无需 Qt，使用系统 MinGW）
+cmake --preset default
 cmake --build build
-
-# 运行（交互式）
 ./build/CampusNavigation.exe
 
-# 批量命令输入
-./build/CampusNavigation.exe < command.txt > output.txt
+# GUI 版本（需要 Qt 6，使用 Qt 自带 MinGW）
+cmake --preset gui
+cmake --build build-gui
+./build-gui/CampusNavigation.exe --gui          # GUI 模式
+./build-gui/CampusNavigation.exe                # CLI 模式（不加 --gui）
+
+# 运行测试
+ctest --test-dir build --output-on-failure
 ```
+
+> **Qt 路径配置**：`cmake --preset gui` 无需设置环境变量，路径已硬编码在 `CMakePresets.json`。其他机器使用时编辑该文件中的 Qt 路径即可。详见 [GUI 用户指南](docs/gui-user-guide.md)。
 
 ---
 
@@ -273,44 +287,30 @@ ctest --test-dir build --output-on-failure
 
 ---
 
-## 扩展指南（图形化界面）（本部分仅供参考，不作为标准）
+## 图形化界面
 
-若要在当前项目基础上添加 GUI，以下是要点：
+通过 `--gui` 启动图形界面，提供图可视化、最短路径高亮和关键节点/边分析功能。所有算法直接复用 CLI 的 `Algorithm.h` 和 `LGraph` 接口，不重复实现。
 
-### 入口点
+### 功能
 
-`src/main.cpp` 创建 `LGraph` 和 `CommandProcessor` 后调用 `processor.run()` 进入 CLI 循环。GUI 可绕过 CLI，直接调用 `CommandProcessor` 的各个 `cmd*` 方法，或直接调用 `Algorithm` 中的函数。
+- **图可视化**：力导向布局自动排列节点，黑色实线 = `open` 边，黑色虚线 = `closed` 边
+- **路径高亮**：输入起点/终点，选择 DIST/TIME 模式，绿色粗线标出最短路径
+- **关键分析**：紫色粗线标出桥边，红色外圈标出割点
+- **数据加载**：File → Open CSV 选择 places/roads 文件
 
-### 可复用的 API
+### 编译
 
-所有核心逻辑已与 I/O 解耦：
-
-- **图操作**：`LGraph` 提供 `addPlace`、`addRoad`、`getPlace`、`getAdjacent`、`getAllVertexIds` 等
-- **算法**：`Algorithm.h` 中的 `dijkstra`、`computeMST`、`computeCritical`、`computeComponents`、`mustPassPath`、`shortestPathWithK` 均直接接收 `const LGraph&`
-- **结果结构体**：`PathResult`、`MSTResult`、`CriticalResult`、`KPathResult` 可直接用于渲染
-
-### 为 GUI 新增文件
-
-```
-src/gui_main.cpp           # GUI 入口（替换 main.cpp）
-src/gui/                   # GUI 相关源码
-  ├── MainWindow.cpp/h     # 主窗口
-  ├── GraphWidget.cpp/h    # 图渲染组件
-  └── ...
+```bash
+cmake --preset gui && cmake --build build-gui
 ```
 
-CMakeLists.txt 中可用 `option(BUILD_GUI ...)` 切换 CLI/GUI 目标。
+### 代码组织
 
-### 图渲染所需数据
+```
+src/gui_main.cpp               # runGui()：QApplication + MainWindow
+src/gui/MainWindow.h/cpp        # 主窗口，菜单栏 + 控件栏 + GraphWidget
+src/gui/GraphWidget.h/cpp       # QWidget 子类，paintEvent 手绘
+src/gui/ForceLayout.h/cpp       # Fruchterman-Reingold 算法
+```
 
-- **顶点列表**：`graph.getAllPlaces()` → 每个 `Place` 含坐标（如有）、名称、类别
-- **边列表**：`graph.getAllOpenEdges()` → 含端点、距离、状态
-- **路径**：算法返回的 `PathResult.nodes` 或 `KPathResult.nodes`
-- **MST 边**：`MSTResult.edges`
-- **割点/桥**：`CriticalResult.nodes` / `CriticalResult.edges`
-
-### 注意事项
-
-- `LGraph` 不存储顶点坐标；若需地图渲染，可在 `Place` 结构体中增加 `x`、`y` 字段，或单独维护 ID→坐标的映射
-- 命令处理器的错误输出通过 `std::cout`；GUI 中可能需要重定向或改为返回值/回调
-- 当前道路是无向的，边以标准化形式存储（`from_id <= to_id`）
+完整说明见 [GUI 用户指南](docs/gui-user-guide.md)。
