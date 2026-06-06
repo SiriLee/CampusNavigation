@@ -46,3 +46,20 @@ add_test(
 		${CMAKE_SOURCE_DIR}/test_data/custom
 		${CMAKE_BINARY_DIR}/test_outputs_custom
 )
+
+# ─── Adversarial / edge-case tests ───
+
+add_executable(CampusNavigationContrastTests
+	test_contrast.cpp
+)
+
+target_compile_features(CampusNavigationContrastTests PRIVATE cxx_std_17)
+target_include_directories(CampusNavigationContrastTests PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+add_test(
+	NAME contrast
+	COMMAND CampusNavigationContrastTests
+		$<TARGET_FILE:CampusNavigation>
+		${CMAKE_SOURCE_DIR}/test_data/contrast
+		${CMAKE_BINARY_DIR}/test_outputs_contrast
+)
