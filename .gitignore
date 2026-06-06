@@ -1,6 +1,12 @@
 # 编译产物
 build/
 build-gui/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+DartConfiguration.tcl
 *.o
 *.obj
 *.exe
