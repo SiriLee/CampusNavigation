@@ -1,5 +1,6 @@
 # 编译产物
 build/
+build-gui/
 *.o
 *.obj
 *.exe
@@ -13,6 +14,9 @@ build/
 # 临时文件
 *.log
 *.tmp
+
+# CMake 用户本地配置
+CMakeUserPresets.json
 
 # 其他
 .claude/
