@@ -1,4 +1,4 @@
-// tests/test_contrast.cpp — Adversarial / edge-case test suite
+// tests/test_adversarial.cpp — Adversarial / edge-case test suite
 #include "test_common.h"
 
 static bool compareOutputLine(const std::string& actual, const std::string& expected) {
@@ -20,6 +20,6 @@ static bool compareOutputLine(const std::string& actual, const std::string& expe
 
 int main(int argc, char* argv[]) {
 	return runTestSuite(argc, argv,
-		"usage: CampusNavigationContrastTests <app_exe> <contrast_root> <result_root>",
+		"usage: CampusNavigationAdversarialTests <app_exe> <adversarial_root> <result_root>",
 		compareOutputLine);
 }
