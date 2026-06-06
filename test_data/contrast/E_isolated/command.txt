@@ -1,0 +1,5 @@
+LOAD places.csv roads.csv
+COMPONENTS
+CRITICAL
+MST
+QUIT

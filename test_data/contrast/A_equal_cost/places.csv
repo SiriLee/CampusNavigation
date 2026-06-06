@@ -1,0 +1,5 @@
+place_id,display_name,category,stay_time,open_time,close_time
+P001,起点,Other,0,00:00,23:59
+P002,上路口,Other,0,00:00,23:59
+P003,下路口,Other,0,00:00,23:59
+P004,终点,Other,0,00:00,23:59

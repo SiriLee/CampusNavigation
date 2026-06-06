@@ -1,0 +1,11 @@
+place_id,display_name,category,stay_time,open_time,close_time
+P001,链头,Other,0,00:00,23:59
+P002,链中,Other,0,00:00,23:59
+P003,链尾,Other,0,00:00,23:59
+P004,孤点1,Other,0,00:00,23:59
+P005,孤点2,Other,0,00:00,23:59
+P006,孤点3,Other,0,00:00,23:59
+P007,孤点4,Other,0,00:00,23:59
+P008,孤点5,Other,0,00:00,23:59
+P009,孤点6,Other,0,00:00,23:59
+P010,孤点7,Other,0,00:00,23:59

@@ -1,0 +1,2 @@
+from_id,to_id,distance,walk_time,status
+P001,P002,10,10,open
