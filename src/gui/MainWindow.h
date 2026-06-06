@@ -5,6 +5,8 @@
 
 class LGraph;
 class GraphWidget;
+class QLineEdit;
+class QComboBox;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -16,9 +18,21 @@ public:
 protected:
     void showEvent(QShowEvent *event) override;
 
+private slots:
+    void onOpenCsv();
+    void onCalcPath();
+    void onAnalyzeCritical();
+    void onResetView();
+
 private:
+    QWidget* createControlBar();
+
     LGraph* m_graph;
     GraphWidget* m_graphWidget;
+
+    QLineEdit* m_fromEdit;
+    QLineEdit* m_toEdit;
+    QComboBox* m_modeCombo;
 };
 
 #endif // MAINWINDOW_H
