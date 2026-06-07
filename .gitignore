@@ -1,6 +1,12 @@
 # 编译产物
 build/
 build-gui/
+build-release/
+build-gui-release/
+
+# 发布目录
+bin/
+dist/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
