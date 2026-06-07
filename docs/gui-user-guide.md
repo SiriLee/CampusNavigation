@@ -181,3 +181,7 @@ CMakePresets.json 中的 Qt 路径与当前机器不匹配。编辑文件，将 
 **Q: 窗口显示但无节点**
 
 尚未加载 CSV 数据。点击 File → Open CSV... 选择数据文件。
+
+**Q: 加载 CSV 时提示 `file_empty_or_unreadable`**
+
+`File → Open CSV` 在 Windows 上仅支持**纯英文路径**（含 ASCII 字符）。若 CSV 文件所在目录包含中文或特殊字符（如 `D:\课程\数据\places.csv`），将报此错误。将数据文件放在全英文路径下即可（如 `D:\Temp\data\`）。
