@@ -255,7 +255,7 @@ adversarial:  TOTAL  5 PASS  5 FAIL 0  ✅
 
 ## 5. 拓展任务完成情况
 
-### 5.1 拓展 1：共享单车券（分层图最短路）— 9 分 ✅
+### 5.1 拓展 1：共享单车券（分层图最短路）
 
 - 实现了 `SHORTEST_K <from> <to> <K>` 命令
 - 分层图 Dijkstra：K+1 层状态空间 `(place_id, used)`
@@ -264,7 +264,7 @@ adversarial:  TOTAL  5 PASS  5 FAIL 0  ✅
 - K=0 退化到普通 Dijkstra（TIME 模式）
 - 全部 4 个 explore 测试用例通过
 
-### 5.2 拓展 2：自定义微型数据集 + 对抗样例 — 3 分 ✅
+### 5.2 拓展 2：自定义微型数据集 + 对抗样例
 
 **微型数据集**（[`test_data/custom/`](../test_data/custom/)）：
 - 15 个地点、26 条道路的虚拟大学校园场景
@@ -281,7 +281,7 @@ adversarial:  TOTAL  5 PASS  5 FAIL 0  ✅
 - E：孤立点（无边节点不误判为割点）
 - 详细说明见 [`docs/adversarial-dataset.md`](../docs/adversarial-dataset.md)
 
-### 5.3 拓展 3：图形化界面（Qt 6）— 3 分 ✅
+### 5.3 拓展 3：图形化界面（Qt 6）
 
 - 使用 Qt 6.11.1 (Widgets 模块)，通过 `--gui` 参数启动
 - **力导向布局**：Fruchterman-Reingold 算法，70 次迭代，固定随机种子保证可复现
@@ -292,17 +292,15 @@ adversarial:  TOTAL  5 PASS  5 FAIL 0  ✅
 - CLI 接口完整保留，GUI 与 CLI 共享同一套 `Algorithm.h` 和 `LGraph` 接口
 - 详细说明见 [`docs/gui-user-guide.md`](../docs/gui-user-guide.md)
 
-#### GUI 截图预留
+#### GUI 效果截图
 
-> 以下截图待制作后放入 `docs/gui_screenshots/` 目录。建议的截图内容和要求：
-
-| 编号 | 文件名 | 建议内容 | 建议说明 |
-|------|--------|---------|---------|
-| 01 | `01-loaded.png` | 加载 custom 数据后的基础视图 | 全窗口截图，包含菜单栏、控制栏和画布。画布上可见 15 个节点的力导向布局，黑色实线（open 边）和黑色虚线（closed 边，P006-P012）。节点显示 place_id 标签。截图中最好能同时看到 "File → Open CSV" 菜单展开状态或最近使用的文件 |
-| 02 | `02-path.png` | 最短路径高亮 | 在 From 输入 `P001`、To 输入 `P007`、Mode 选择 `DIST`，点击 Calculate Path 后截图。画布上 P001→P005→P007 应以绿色粗线高亮，其余边保持黑色实线/虚线。控制栏的输入框应保留输入内容可见 |
-| 03 | `03-critical.png` | 关键节点/边分析 + 路径共存 | 先点击 Analyze Critical（P014-P015 桥边变紫色粗线、桥两端节点外圈红色），再计算 P001→P003 最短路径（绿色粗线）。展示两种高亮可共存且互不覆盖（紫色边与绿色边不重叠的场景） |
-| 04 | `04-reset.png` | 重置视图后的干净画布 | 点击 Reset View 或 View → Reset Highlights 后的截图，展示所有高亮已被清除，恢复基础视图 |
-| 05 | `05-menu.png` | 菜单功能展示 | 可选：展开 File 菜单和 View 菜单的截图，展示完整的菜单项（Open CSV、Reset Highlights） |
+| 编号 | 截图 | 说明 |
+|------|------|------|
+| 01 | ![](gui_screenshots/01-loaded.png) | 加载 custom 数据后的基础视图：15 节点力导向布局，黑色实线 = open 边，黑色虚线 = closed 边 |
+| 02 | ![](gui_screenshots/02-path.png) | 最短路径高亮：P001→P007 (DIST)，绿色粗线标出最优路径 P001→P005→P007 |
+| 03 | ![](gui_screenshots/03-critical.png) | 关键分析 + 路径共存：紫色粗线标出桥边 P014-P015，红色外圈标出割点，绿色标出 P001→P003 最短路 |
+| 04 | ![](gui_screenshots/04-reset.png) | 重置视图：点击 Reset View 后清除所有高亮，恢复基础视图 |
+| 05 | ![](gui_screenshots/05-menu.png) | 菜单功能展示：File → Open CSV 与 View → Reset Highlights |
 
 ---
 
