@@ -221,47 +221,7 @@ ctest --test-dir build -R custom --output-on-failure
 
 ---
 
-### 测试架构
-
-所有测试程序共享同一套基础设施（[`tests/test_common.h`](../tests/test_common.h)），每个测试程序仅约 20 行，定义自己的 `compareOutputLine` 和 `main`：
-
-```
-test_common.h  ───  runTestSuite() 模板
-                 │   归一化、文件 I/O、进程启动、用例发现
-                 │   compareStandardPathLines()
-                 │   compareShortestKPathLines()
-                 │   compareMstLines()
-                 │   compareCriticalLines()
-                 │
-  ├─ test_core.cpp     →  基础功能 must_do 测试
-  ├─ test_explore.cpp  →  拓展功能 SHORTEST_K 测试
-  └─ test_custom.cpp   →  自定义场景测试
-```
-
-`runTestSuite` 是一个函数模板，接收一个 `compareOutputLine` 回调参数，实现"策略模式"——每个测试只需提供自己的行比较逻辑，其余流程全部复用。
-
----
-
-### 测试原理（黑盒）
-
-测试程序不依赖内部实现，只验证命令行输入输出：
-
-1. 扫描测试数据目录，查找同时包含 `command.txt` 和 `answer.txt` 的目录作为用例
-2. 以用例目录为进程工作目录，将 `command.txt` 重定向到被测程序 `stdin`
-3. 将 `stdout`/`stderr` 重定向到 `build/test_outputs_custom/<name>_output.txt`
-4. 程序退出后，归一化实际输出并与 `answer.txt` 逐行比较
-5. 程序退出码为 0 且输出比较通过 → `PASS`；否则 `FAIL`，输出文件中保留实际结果供排查
-
----
-
-### 输出归一化
-
-在比较前对实际输出和参考答案做轻量归一化，减少平台差异：
-
-1. 换行归一化：统一为 `\n`
-2. 行尾空白归一化：去除每行末尾空格和制表符
-
----
+测试程序采用黑盒进程比对架构：以用例目录为工作目录启动被测程序，将 `command.txt` 重定向到 `stdin`，归一化（`\r\n`→`\n`、行尾空白裁剪）后与 `answer.txt` 逐行比较。全部测试程序共享 [`tests/test_common.h`](../tests/test_common.h)，测试架构的完整说明见 [README.md](../README.md#测试基础设施)。
 
 ### 判定准则（本数据集涉及的行类型）
 

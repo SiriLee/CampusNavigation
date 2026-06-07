@@ -75,7 +75,7 @@ ctest --test-dir build --output-on-failure
 
 画布自动刷新：15 个节点按力导向布局排列，`open` 边黑色实线，`closed` 边黑色虚线。
 
-> 测试数据：`test_data/custom/places.csv` + `test_data/custom/roads.csv`（15 节点，18 边）
+> 测试数据：`test_data/custom/places.csv` + `test_data/custom/roads.csv`（15 节点，26 条道路，24 open + 2 closed）
 
 ### 4.2 计算最短路径
 
@@ -158,11 +158,13 @@ loadRoads(graph, "roads.csv", err);                    // CsvIO.h
 
 > 截图保存于 `docs/gui_screenshots/` 目录。
 
-| 截图 | 说明 | 链接 |
-|------|------|------|
-| 基础视图 | 加载 custom 数据后的力导向布局，open/closed 边 | ![](gui_screenshots/01-loaded.png) |
-| 路径高亮 | P001→P007 DIST 最短路径，绿色粗线 | ![](gui_screenshots/02-path.png) |
-| 关键分析 | 紫色桥边 P014-P015 + 红色关键节点边框 | ![](gui_screenshots/03-critical.png) |
+| 编号 | 截图 | 说明 | 链接 |
+|------|------|------|------|
+| 01 | 基础视图 | 加载 custom 数据后的力导向布局，open/closed 边 | ![](gui_screenshots/01-loaded.png) |
+| 02 | 路径高亮 | P001→P007 DIST 最短路径，绿色粗线 | ![](gui_screenshots/02-path.png) |
+| 03 | 关键分析 | 紫色桥边 P014-P015 + 红色关键节点边框 + 路径共存 | ![](gui_screenshots/03-critical.png) |
+| 04 | 重置视图 | 点击 Reset View 清除所有高亮后恢复基础视图 | ![](gui_screenshots/04-reset.png) |
+| 05 | 菜单功能 | File 菜单和 View 菜单的完整菜单项展示 | ![](gui_screenshots/05-menu.png) |
 
 ---
 

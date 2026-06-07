@@ -12,6 +12,7 @@ CampusNavigation/
 ├── CMakePresets.json           # CMake 构建预设（default=CLI, gui=Qt6）
 ├── README.md
 ├── docs/
+│   ├── project-report.md       # 实验报告（数据结构、算法、测试、AI 协作记录）
 │   ├── gui-user-guide.md       # GUI 用户指南（编译、操作、截图）
 │   ├── custom-dataset.md       # 自定义场景数据集说明
 │   └── adversarial-dataset.md  # 对抗样例数据集说明
